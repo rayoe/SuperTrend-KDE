@@ -31,10 +31,10 @@ SuperTrend(length, multiplier, bandwidth) =>
 
 [upper_band, lower_band, trend] = SuperTrend(length, multiplier, bandwidth)
 
-SuperTrendLine = trend == 1 ? lower_band : upper_band
+ST = trend == 1 ? lower_band : upper_band
+upTrend = plot(close > ST ? ST : na, color = color.green, style = plot.style_linebr) //, force_overlay = true
+downTrend = plot(close < ST ? ST : na, color = color.red, style = plot.style_linebr, force_overlay = false) //, force_overlay = true
+bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, "Body Middle",display = display.none)
 
-plot(SuperTrendLine, color=trend == 1 ? color.green : color.red, style=plot.style_area, title="Supertrend")
-
-// Plot upper and lower bands
-plot(upper_band, color=color.new(color.red, 80), title="Upper Band")
-plot(lower_band, color=color.new(color.green, 80), title="Lower Band")
+fill(bodyMiddle, upTrend, (open + close) / 2, ST, color.green, color.new(green, 90))
+fill(bodyMiddle, downTrend, ST, (open + close) / 2, color.red, color.new(red, 90))
