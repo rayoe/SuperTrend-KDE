@@ -5,23 +5,24 @@ indicator("SuperTrend Kernel Optimized", overlay=true)
 length = input(10, title="Length")
 multiplier = input(1.5, title="Multiplier")
 bandwidth = input(1.0, title="Bandwidth")
-
+atr_len = input.int(10, "ATR Length", group = "SuperTrend Settings")
 Returns(price) => // Calculates returns of the price of the asset
     math.log(price / price[1])
 
 log_returns = Returns(close)
 
 gaussian_kernel(x, bandwidth) =>
-    math.exp(-(x * x) / (2 * bandwidth * bandwidth)) / math.sqrt(2 * math.pi * bandwidth * bandwidth) // Gaussian Kernel Function
+    1.0 / math.sqrt(2.0 * math.pi) * math.pow(math.e, -0.5 * math.pow(x / bandwidth, 2.0))// Gaussian Kernel Function
 
-SuperTrend(length, multiplier, bandwidth) =>
+SuperTrend(length, multiplier, bandwidth, atr_len) =>
     kde_vol = 0.0
     for i = 0 to length - 1
         kde_vol := kde_vol + gaussian_kernel(log_returns - log_returns[i], bandwidth)
     kde_vol := kde_vol / length
-
-    upper_band = close + multiplier * kde_vol
-    lower_band = close - multiplier * kde_vol
+    atr = ta.atr(atr_len)
+    volatility = atr + kde_vol
+    upper_band = close + multiplier * volatility
+    lower_band = close - multiplier * volatility
 
     trend = 1
     trend := nz(trend[1], 1)
@@ -29,15 +30,15 @@ SuperTrend(length, multiplier, bandwidth) =>
 
     [upper_band, lower_band, trend]
 
-[upper_band, lower_band, trend] = SuperTrend(length, multiplier, bandwidth)
+[upper_band, lower_band, trend] = SuperTrend(length, multiplier, bandwidth, atr_len)
 
 ST = trend == 1 ? lower_band : upper_band
 upTrend = plot(close > ST ? ST : na, color = color.green, style = plot.style_linebr) //, force_overlay = true
 downTrend = plot(close < ST ? ST : na, color = color.red, style = plot.style_linebr, force_overlay = false) //, force_overlay = true
 bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, "Body Middle",display = display.none)
 
-fill(bodyMiddle, upTrend, (open + close) / 2, ST, color.green, color.new(green, 90))
-fill(bodyMiddle, downTrend, ST, (open + close) / 2, color.red, color.new(red, 90))
+fill(bodyMiddle, upTrend, (open + close) / 2, ST, color.green, color.new(color.green, 90))
+fill(bodyMiddle, downTrend, ST, (open + close) / 2, color.red, color.new(color.red, 90))
 plotshape(ta.crossunder(trend, 0) ? ST : na, "Bullish Trend", shape.labelup, location.absolute, color.green, text = "▲", textcolor = chart.fg_color, size = size.small)
 plotshape(ta.crossover(trend, 0) ? ST : na, "Bearish Trend", shape.labeldown, location.absolute, color.red, text = "▼", textcolor = chart.fg_color, size = size.small)
 alertcondition(ta.crossunder(trend, 0) and barstate.isconfirmed, "Bullish Trend Shift")
