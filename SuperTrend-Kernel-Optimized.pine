@@ -132,9 +132,9 @@ difftoLwKDE = math.abs(supertrend - MidKDELow)
 color curColor = na
 if (not na(KDELowY)) and (not na(KDEHighY))
 
-    if math.abs(lowProb - maxLowProb) < activationThreshold / 50.0
+    if math.abs(lowProb - maxLowProb) < activationThreshold / 70.0
         curColor := bullishColor
-    if math.abs(highProb - maxHighProb) < activationThreshold / 50.0
+    if math.abs(highProb - maxHighProb) < activationThreshold / 70.0
         curColor := bearishColor
 
 plotarrow(curColor == bullishColor and barstate.isconfirmed ? 1 : na, "Bullish Arrows", color.new(bullishColor, 70), color.new(bullishColor, 70), minheight = 20, maxheight = 20)
