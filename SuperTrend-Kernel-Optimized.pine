@@ -1,14 +1,16 @@
 //@version=5
 indicator("SuperTrend Kernel Optimized", overlay=true)
-
+const int maxDistanceToLastBar = 5000
 // input length, multiplier and bandwidth
-length = input(10, title="Length")
 factor = input(1.5, title="Multiplier")
 bandwidth = input(1.0, title="Bandwidth")
 atr_len = input.int(10, "ATR Length", group = "SuperTrend Settings")
-
-gaussian (float distance, float bandwidth = 1.0) => 1.0 / math.sqrt(2.0 * math.pi) * math.pow(math.e, -0.5 * math.pow(distance / bandwidth, 2.0))
-
+activationThresholdStr = input.string("Medium", "Activation Threshold", options = ["High", "Medium", "Low"], group = "KDE", tooltip = "Determines the amount of arrows shown. Higher options will result in more arrows being rendered.")
+float activationThreshold = (activationThresholdStr == "High" ? 0.4 : activationThresholdStr == "Medium" ? 0.25 : 0.15)
+bearishColor = input.color(#f23646, "High Pivots", group = "Style", inline = "col", display = display.none)
+neutralColor = input.color(color.gray, "Neutral", group = "Style", inline = "col", display = display.none)
+bullishColor = input.color(#089981, "Low Pivots", group = "Style", inline = "col", display = display.none)
+KDEKernel = "Gaussian"
 atr = ta.atr(atr_len)
 
 SuperTrend(factor, atr) =>
@@ -34,7 +36,114 @@ SuperTrend(factor, atr) =>
     [supertrend, dir]
 
 
+// now I need to fix the KDE calculation.
 [supertrend, dir] = SuperTrend(factor, atr)
+gaussian (float distance, float bandwidth = 1.0) => 1.0 / math.sqrt(2.0 * math.pi) * math.pow(math.e, -0.5 * math.pow(distance / bandwidth, 2.0))
+
+KDE(array<float> data, float bandwidth = 1.0, int steps) =>
+    dataSize = data.size()
+    dataRange = data.range()
+    dataMin = data.min()
+    stepCount = dataRange / steps
+    densityRange = array.new<float>(steps *2)
+    for i = 0 to (steps*2) - 1
+        densityRange.set(i, dataMin + i * stepCount)
+    xData = array.new<float>()
+    yData = array.new<float>()
+    for i = 0 to densityRange.size()-1
+        float temp = 0
+        for j = 0 to data.size() -1
+            switch KDEKernel
+                "Gaussian" => temp := temp + gaussian(densityRange.get(i) - data.get(j), 1.0 / bandwidth)
+        xData.push(densityRange.get(i))
+        yData.push(1.0/ dataSize*temp)
+    [xData, yData]
+
+prefixSum (array<float> data, int length, int r) => data.get(r) - (length == 0 ? 0 : data.get(length-1))
+float MidKDEHigh = na
+float MidKDELow = na
+
+var array<float> KDEHighX = na
+var array<float> KDEHighY = na
+var array<float> KDEHighYSum = array.new<float>()
+
+var array<float> KDELowX = na
+var array<float> KDELowY = na
+var array<float> KDELowYSum = array.new<float>()
+
+highPivot = ta.pivothigh(21, 21)
+lowPivot = ta.pivotlow(21, 21) // user input
+
+var highPivotSuperTrend = array.new<float>()
+var lowPivotSuperTrend = array.new<float>()
+
+if not na(highPivot)
+    highPivotSuperTrend.push(supertrend[21])
+
+    [KDEHighX1, KDEHighY1] = KDE(highPivotSuperTrend, bandwidth, 100)
+    KDEHighX := KDEHighX1
+    KDEHighY := KDEHighY1
+
+    KDEHighYSum.clear()
+    temp = 0.0
+    for i = 0  to KDEHighY.size() - 1
+        temp := temp + KDEHighY.get(i)
+        KDEHighYSum.push(temp)
+    MidKDEHigh := array.get(KDEHighX, array.indexof(KDEHighY, array.max(KDEHighY)))
+if not na (lowPivot)
+    lowPivotSuperTrend.push(supertrend[21])
+
+    [KDELowX1, KDELowY1] = KDE(lowPivotSuperTrend, bandwidth, 100)
+    KDELowX := KDELowX1
+    KDELowY := KDELowY1
+
+    KDELowYSum.clear()
+    temp = 0.0
+    for i = 0  to KDELowY.size() - 1
+        temp := temp + KDELowY.get(i)
+        KDELowYSum.push(temp)
+    MidKDELow := array.get(KDELowX, array.indexof(KDELowY, array.max(KDELowY)))
+
+
+interpolate(float x0, float x1, float y0, float y1, float x) => y0 + (x - x0) * (y1 - y0) / (x1 - x0)
+
+float lowProb = na
+float maxLowProb = na
+float highProb = na
+float maxHighProb = na
+
+
+if last_bar_index - maxDistanceToLastBar < bar_index
+    if highPivotSuperTrend.size() > 0
+        highXIndexL = array.binary_search_leftmost(KDEHighX, supertrend)
+        highXIndexR = math.min(array.binary_search_rightmost(KDEHighX, supertrend), KDEHighX.size()-1)
+        nearestIndex = (math.abs(supertrend - KDEHighX.get(highXIndexL)) < math.abs(supertrend - KDEHighX.get(highXIndexR))) ? highXIndexL : highXIndexR
+        highProb := KDEHighY.get(nearestIndex)
+        maxHighProb := array.max(KDEHighY)
+    if lowPivotSuperTrend.size() > 0
+        lowXIndexL = array.binary_search_leftmost(KDELowX, supertrend)
+        lowXIndexR = math.min(array.binary_search_rightmost(KDELowX, supertrend), KDELowX.size()-1)
+        nearestIndex = (math.abs(supertrend - KDELowX.get(lowXIndexL)) < math.abs(supertrend - KDELowX.get(lowXIndexR))) ? lowXIndexL : lowXIndexR
+        lowProb := KDELowY.get(nearestIndex)
+        maxLowProb := array.max(KDELowY)
+difftoHighKDE = math.abs(supertrend - MidKDEHigh)
+difftoLwKDE = math.abs(supertrend - MidKDELow)
+
+color curColor = na
+if (not na(KDELowY)) and (not na(KDEHighY))
+
+    if math.abs(lowProb - maxLowProb) < activationThreshold / 50.0
+        curColor := bullishColor
+    if math.abs(highProb - maxHighProb) < activationThreshold / 50.0
+        curColor := bearishColor
+
+plotarrow(curColor == bullishColor and barstate.isconfirmed ? 1 : na, "Bullish Arrows", color.new(bullishColor, 70), color.new(bullishColor, 70), minheight = 20, maxheight = 20)
+plotarrow(curColor == bearishColor and barstate.isconfirmed ? -1 : na, "Bearish Arrows", color.new(bearishColor, 70), color.new(bearishColor, 70), minheight = 20, maxheight = 20)
+
+plotarrow((na(curColor) and curColor[1] == bullishColor and barstate.isconfirmed) ? 1 : na, "Possible Bullish Pivot", bullishColor, bullishColor, minheight = 20, maxheight = 20)
+plotarrow((na(curColor) and curColor[1] == bearishColor and barstate.isconfirmed) ? -1 : na, "Possible Bearish Pivot", bearishColor, bearishColor, minheight = 20, maxheight = 20)
+
+
 
 upTrend = plot(close > supertrend ? supertrend : na, color=color.green, style=plot.style_linebr)
 downTrend = plot(close < supertrend ? supertrend : na, color=color.red, style=plot.style_linebr, force_overlay=false)
@@ -42,8 +151,3 @@ bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, display=display.no
 
 fill(bodyMiddle, upTrend, (open + close) / 2, supertrend, color.green, color.new(color.green, 90))
 fill(bodyMiddle, downTrend, supertrend, (open + close) / 2, color.red, color.new(color.red, 90))
-
-plotshape(ta.crossunder(dir, 0) ? supertrend : na, style=shape.labelup, location=location.abovebar, color=color.green, text="GREEN", textcolor=chart.fg_color, size=size.small)
-plotshape(ta.crossover(dir, 0) ? supertrend : na, style=shape.labeldown, location=location.belowbar, color=color.red, text="RED", textcolor=chart.fg_color, size=size.small) 
-
-
