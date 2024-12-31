@@ -3,43 +3,47 @@ indicator("SuperTrend Kernel Optimized", overlay=true)
 
 // input length, multiplier and bandwidth
 length = input(10, title="Length")
-multiplier = input(1.5, title="Multiplier")
+factor = input(1.5, title="Multiplier")
 bandwidth = input(1.0, title="Bandwidth")
 atr_len = input.int(10, "ATR Length", group = "SuperTrend Settings")
-Returns(price) => // Calculates returns of the price of the asset
-    math.log(price / price[1])
 
-log_returns = Returns(close)
+gaussian (float distance, float bandwidth = 1.0) => 1.0 / math.sqrt(2.0 * math.pi) * math.pow(math.e, -0.5 * math.pow(distance / bandwidth, 2.0))
 
-gaussian_kernel(x, bandwidth) =>
-    1.0 / math.sqrt(2.0 * math.pi) * math.pow(math.e, -0.5 * math.pow(x / bandwidth, 2.0))// Gaussian Kernel Function
+atr = ta.atr(atr_len)
 
-SuperTrend(length, multiplier, bandwidth, atr_len) =>
-    kde_vol = 0.0
-    for i = 0 to length - 1
-        kde_vol := kde_vol + gaussian_kernel(log_returns - log_returns[i], bandwidth)
-    kde_vol := kde_vol / length
-    atr = ta.atr(atr_len)
-    volatility = atr + kde_vol
-    upper_band = close + multiplier * volatility
-    lower_band = close - multiplier * volatility
+SuperTrend(factor, atr) =>
+    src = hl2
+    upperBand = src + factor * atr
+    lowerBand = src - factor * atr
+    prevLowerBand = nz(lowerBand[1])
+    prevUpperBand = nz(upperBand[1])
 
-    trend = 1
-    trend := nz(trend[1], 1)
-    trend := close > lower_band[1] ? 1 : close < upper_band[1] ? -1 : trend
+    lowerBand := lowerBand > prevLowerBand or close[1] < prevLowerBand ? lowerBand: prevLowerBand
+    upperBand := upperBand < prevUpperBand or close[1] > prevUpperBand ? upperBand : prevUpperBand
+    int dir = na
+    float supertrend = na
+    prevSuperTrend = supertrend[1]
+    if na(atr[1])
+        dir := 1
+        supertrend := lowerBand
+    else if prevSuperTrend == prevUpperBand
+        dir := close > upperBand ? -1 : 1
+    else
+        dir := close < lowerBand ? 1 : -1
+    supertrend := dir == 1 ? lowerBand : upperBand[1]
+    [supertrend, dir]
 
-    [upper_band, lower_band, trend]
 
-[upper_band, lower_band, trend] = SuperTrend(length, multiplier, bandwidth, atr_len)
+[supertrend, dir] = SuperTrend(factor, atr)
 
-ST = trend == 1 ? lower_band : upper_band
-upTrend = plot(close > ST ? ST : na, color = color.green, style = plot.style_linebr) //, force_overlay = true
-downTrend = plot(close < ST ? ST : na, color = color.red, style = plot.style_linebr, force_overlay = false) //, force_overlay = true
-bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, "Body Middle",display = display.none)
+upTrend = plot(close > supertrend ? supertrend : na, color=color.green, style=plot.style_linebr)
+downTrend = plot(close < supertrend ? supertrend : na, color=color.red, style=plot.style_linebr, force_overlay=false)
+bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, display=display.none)
 
-fill(bodyMiddle, upTrend, (open + close) / 2, ST, color.green, color.new(color.green, 90))
-fill(bodyMiddle, downTrend, ST, (open + close) / 2, color.red, color.new(color.red, 90))
-plotshape(ta.crossunder(trend, 0) ? ST : na, "Bullish Trend", shape.labelup, location.absolute, color.green, text = "▲", textcolor = chart.fg_color, size = size.small)
-plotshape(ta.crossover(trend, 0) ? ST : na, "Bearish Trend", shape.labeldown, location.absolute, color.red, text = "▼", textcolor = chart.fg_color, size = size.small)
-alertcondition(ta.crossunder(trend, 0) and barstate.isconfirmed, "Bullish Trend Shift")
-alertcondition(ta.crossover(trend, 0) and barstate.isconfirmed, "Bearish Trend Shift")
+fill(bodyMiddle, upTrend, (open + close) / 2, supertrend, color.green, color.new(color.green, 90))
+fill(bodyMiddle, downTrend, supertrend, (open + close) / 2, color.red, color.new(color.red, 90))
+
+plotshape(ta.crossunder(dir, 0) ? supertrend : na, style=shape.labelup, location=location.abovebar, color=color.green, text="GREEN", textcolor=chart.fg_color, size=size.small)
+plotshape(ta.crossover(dir, 0) ? supertrend : na, style=shape.labeldown, location=location.belowbar, color=color.red, text="RED", textcolor=chart.fg_color, size=size.small) 
+
+
