@@ -1,0 +1,12 @@
+//@version=5
+indicator("SuperTrend Kernel Optimized", overlay=true)
+
+// input lengt, multiplier and bandwith
+length = input(10, title="Length")
+multiplier = input(1.5, title="Multiplier")
+bandwidth = input(1.0, title="Bandwidth")
+
+
+
+
+
