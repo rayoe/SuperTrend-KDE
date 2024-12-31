@@ -1,12 +1,42 @@
 //@version=5
 indicator("SuperTrend Kernel Optimized", overlay=true)
 
-// input lengt, multiplier and bandwith
+// input length, multiplier and bandwith
 length = input(10, title="Length")
 multiplier = input(1.5, title="Multiplier")
 bandwidth = input(1.0, title="Bandwidth")
 
+Returns(price) => // Caluclates returns of the price of the asset
+    math.log(price/price[1])
+ 
+log_returns = Returns(close)
 
+gaussian_kernel(x, bandwidth) =>
+        math.exp(-(x * x) / (2 * bandwidth * bandwidth)) / math.sqrt(2 * math.pi * bandwidth * bandwidth) // Gaussian Kernel Function
+
+
+kde_vol = na
+
+for i = 0 to length-1
+    kde_vol := kde_vol + gaussian_kernel(log_returns - log_returns[i], bandwidth)
+
+kde_vol := kde_vol / length
+
+upper_band = close + multiplier * kde_vol
+lower_band = close - multiplier * kde_vol
+
+trend = 1
+trend :+ nz(trend[1], 1)
+
+trend := close > lower_band[1] ? 1 : close < upper_band[1] ? -1 : trend
+
+SuperTrend = trend == 1 ? lower_band : upper_band
+
+plot(supertrend, color=trend == 1 ? color.green : color.red, style = plot.style_area, title="Supertrend")
+
+// Plot upper and lower bands
+plot(upper_band, color=color.new(color.red, 80), title="Upper Band")
+plot(lower_band, color=color.new(color.green, 80), title="Lower Band")
 
 
 
