@@ -38,3 +38,7 @@ bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, "Body Middle",disp
 
 fill(bodyMiddle, upTrend, (open + close) / 2, ST, color.green, color.new(green, 90))
 fill(bodyMiddle, downTrend, ST, (open + close) / 2, color.red, color.new(red, 90))
+plotshape(ta.crossunder(trend, 0) ? ST : na, "Bullish Trend", shape.labelup, location.absolute, color.green, text = "▲", textcolor = chart.fg_color, size = size.small)
+plotshape(ta.crossover(trend, 0) ? ST : na, "Bearish Trend", shape.labeldown, location.absolute, color.red, text = "▼", textcolor = chart.fg_color, size = size.small)
+alertcondition(ta.crossunder(trend, 0) and barstate.isconfirmed, "Bullish Trend Shift")
+alertcondition(ta.crossover(trend, 0) and barstate.isconfirmed, "Bearish Trend Shift")
