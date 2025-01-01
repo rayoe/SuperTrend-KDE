@@ -11,33 +11,26 @@ atrr = ta.atr(atr_len)
 
 // SuperTrend Function
 SuperTrend(factor, atr) =>
-    src = close
+    src = hl2
     upperBand = src + factor * atr
     lowerBand = src - factor * atr
+    prevLowerBand = nz(lowerBand[1])
+    prevUpperBand = nz(upperBand[1])
 
-    // Ensure continuity for upper and lower bands
-    upperBand := na(upperBand[1]) or close[1] < upperBand[1] ? upperBand : upperBand[1]
-    lowerBand := na(lowerBand[1]) or close[1] > lowerBand[1] ? lowerBand : lowerBand[1]
-
-    float supertrend = na
+    lowerBand := lowerBand > prevLowerBand or close[1] < prevLowerBand ? lowerBand : prevLowerBand
+    upperBand := upperBand < prevUpperBand or close[1] > prevUpperBand ? upperBand : prevUpperBand
     int dir = na
-
-    // Initialization
-
-        // Check for trend reversals
-    if supertrend[1] == lowerBand[1] and close > upperBand
-        dir := -1
-        supertrend := upperBand
-    else if supertrend[1] == upperBand[1] and close < lowerBand
-            
+    float supertrend = na
+    prevSuperTrend = supertrend[1]
+    if na(atr[1])
         dir := 1
-        supertrend := lowerBand
+    else if prevSuperTrend == prevUpperBand
+        dir := close > upperBand ? -1 : 1
     else
-            // Continuation of current trend
-        dir := supertrend[1] == lowerBand[1] ? 1 : -1
-        supertrend := dir == 1 ? lowerBand : upperBand
-
+        dir := close < lowerBand ? 1 : -1
+    supertrend := dir == -1 ? lowerBand : upperBand
     [supertrend, dir]
+
 
 // Call SuperTrend
 [supertrend, dir] = SuperTrend(factor, atrr)
