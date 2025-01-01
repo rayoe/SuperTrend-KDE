@@ -7,11 +7,11 @@ bandwidth = input.float(1.0, title="Bandwidth")
 atr_len = input.int(10, title="ATR Length", group="SuperTrend Settings")
 
 // ATR Calculation
-atrr = ta.atr(atr_len)
+atr = ta.atr(atr_len)
 
 // SuperTrend Function
 SuperTrend(factor, atr) =>
-    src = hl2
+    src = close
     upperBand = src + factor * atr
     lowerBand = src - factor * atr
     prevLowerBand = nz(lowerBand[1])
@@ -28,66 +28,47 @@ SuperTrend(factor, atr) =>
         dir := close > upperBand ? -1 : 1
     else
         dir := close < lowerBand ? 1 : -1
-    supertrend := dir == -1 ? lowerBand : upperBand
+    supertrend := dir == -1 ? lowerBand : upperBand  // Detect trend changes
     [supertrend, dir]
 
 
 // Call SuperTrend
 
 // Call SuperTrend
-[supertrend, dir] = SuperTrend(factor, atrr)
-gaussian(distance, bandwidth) =>
-    math.exp(-0.5 * math.pow(distance / bandwidth, 2)) / math.sqrt(2 * math.pi)
+[supertrend, dir] = SuperTrend(factor, atr)
+directionChange = dir != dir[1]
 
-KDE(data, bandwidth, steps) =>
-    dataMin = array.min(data)
-    dataMax = array.max(data)
-    dataRange = dataMax - dataMin
-    stepSize = dataRange / steps
+gaussian(n, bandwidth, decay) => 1 / (bandwidth * math.sqrt(2 * math.pi)) *math.exp(-0.5 * math.pow(n/ bandwidth, 2)) * math.exp(-math.abs(n) * decay)  
 
-    kdeX = array.new_float(steps)
-    kdeY = array.new_float(steps)
+kdeSum = 0.0
+weightSum = 0.0
+densitySum = 0.0
+currentDensity = 0.0
 
-    for i = 0 to steps - 1
-        densityValue = dataMin + i * stepSize
-        tempSum = 0.0
-        for j = 0 to array.size(data) - 1
-            tempSum += gaussian(densityValue - array.get(data, j), bandwidth)
-        array.set(kdeX, i, densityValue)
-        array.set(kdeY, i, tempSum / array.size(data))
+for i = 0 to 5000 - 1
+    weight = gaussian(i - (5000 / 2), bandwidth, 0.1)
+    kdeSum := kdeSum + close[i] * weight
+    weightSum := weightSum + weight
+    densitySum := densitySum + weight
+    if i == 0
+        currentDensity := weight  // Capture the density for the current price
 
-    [kdeX, kdeY]
+kde = kdeSum / weightSum  // KDE approximation
+plot(densitySum)
+// Normalized Probability Density
+probDensity = currentDensity / densitySum
 
+// Reversal Likelihood (1 - Probability Density)
+reversalLikelihood = 1 - probDensity
+kdePeak = kde > kde[1] and kde > kde[2] 
+kdeTrough = kde < kde[1] and kde < kde[2]
+recentPeak = ta.highest(kdePeak ? kde : na, 500)  // Find recent peak
+recentTrough = ta.lowest(kdeTrough ? kde : na, 500)
+plot(kde)
+atrThreshold = input.float(50, title="ATR Threshold")  // Adjust threshold based on asset
 // Collect SuperTrend values for KDE
-var superTrendValues = array.new_float()
-if not na(supertrend)
-    array.push(superTrendValues, supertrend)
-
-// Compute KDE for SuperTrend
-[kdeX, kdeY] = KDE(superTrendValues, 10000, 10)
-
-// Find Distance from KDE to SuperTrend
-float distance = na
-float probability = na
-if not na(supertrend)
-    closestIndex = 0
-    minDistance = 1e10
-    for i = 0 to array.size(kdeX) - 1
-        d = math.abs(supertrend - array.get(kdeX, i))
-        if d < minDistance
-            minDistance := d
-            closestIndex := i
-    kdeValue = array.get(kdeY, closestIndex)
-    distance := minDistance
-    probability := 1.0 - math.min(distance / 10000, 1.0) 
-
-if (bar_index % 50 == 0)  // Show every 50th bar to reduce clutter
-    label.new(bar_index, high, str.tostring(kdeY), color=color.white)
-plot(probability, color=color.red, title="probability")
-
-buySignal = probability > 0.9 and dir == -1
-sellSignal = probability > 0.98 and dir == 1
-
+buySignal = directionChange and dir == -1 and reversalLikelihood > 0.6 and close < recentPeak
+sellSignal = directionChange and dir == 1 and reversalLikelihood > 0.6 and close > recentTrough 
 // Plot the SuperTrend lines based on the direction
 upTrend = plot(dir == -1 ? supertrend : na, color=color.green, style=plot.style_linebr, title="UpTrend Line")
 downTrend = plot(dir == 1 ? supertrend : na, color=color.red, style=plot.style_linebr, title="DownTrend Line")
@@ -97,8 +78,5 @@ bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body M
 
 fill(bodyMiddle, upTrend, (open + close) / 2, supertrend, color.green, color.new(color.green, 90))
 fill(bodyMiddle, downTrend, supertrend, (open + close) / 2, color.red, color.new(color.red, 90))
-plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=color.green, size=size.small, title="Buy Signal")
-plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=color.red, size=size.small, title="Sell Signal")
-plot(distance, color=color.blue, title="Distance to KDE")
-var table realtimeTable = table.new(position.top_right, 2, 10, bgcolor = color.gray, frame_width = 2, frame_color = color.white, border_width = 1)
-table.cell(realtimeTable, 1, 1, str.tostring(distance, "#"), text_color = color.white, bgcolor = color.gray)
+plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=color.green,text = "▲", textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=color.red, text = "▼", textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
