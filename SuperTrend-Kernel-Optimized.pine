@@ -3,15 +3,14 @@ indicator("SuperTrend Kernel Optimized", overlay=true)
 
 // Input Parameters
 factor = input.float(1.5, title="Multiplier")
-bandwidth = input.float(1.0, title="Bandwidth")
 atr_len = input.int(10, title="ATR Length", group="SuperTrend Settings")
 
 // ATR Calculation
 atr = ta.atr(atr_len)
-
+bandwidth = atr * 0.5
 // SuperTrend Function
 SuperTrend(factor, atr) =>
-    src = close
+    src = hl2
     upperBand = src + factor * atr
     lowerBand = src - factor * atr
     prevLowerBand = nz(lowerBand[1])
@@ -32,18 +31,25 @@ SuperTrend(factor, atr) =>
     [supertrend, dir]
 
 
+// Call SuperTrend
+
+// Call SuperTrend
 [supertrend, dir] = SuperTrend(factor, atr)
 directionChange = dir != dir[1]
 
-gaussian(n, bandwidth, decay) => 1 / (bandwidth * math.sqrt(2 * math.pi)) *math.exp(-0.5 * math.pow(n/ bandwidth, 2)) * math.exp(-math.abs(n) * decay)  
+gaussian(n, bandwidth, decay) => 
+    norm = 1 / (bandwidth * math.sqrt(2 * math.pi))
+    weight = norm * math.exp(-0.5 * math.pow(n / bandwidth, 2)) * math.exp(-math.abs(n) * decay)
+    weight
+
 
 kdeSum = 0.0
 weightSum = 0.0
 densitySum = 0.0
-currentDensity = 0.0
+float currentDensity = na
 
-for i = 0 to 5000 - 1
-    weight = gaussian(i - (5000 / 2), bandwidth, 0.1)
+for i = 0 to 100 - 1
+    weight = gaussian(i - (100 / 2), bandwidth, 0.1)
     kdeSum := kdeSum + close[i] * weight
     weightSum := weightSum + weight
     densitySum := densitySum + weight
@@ -51,21 +57,22 @@ for i = 0 to 5000 - 1
         currentDensity := weight  // Capture the density for the current price
 
 kde = kdeSum / weightSum  // KDE approximation
-plot(densitySum)
 // Normalized Probability Density
-probDensity = currentDensity / densitySum
-
+maxKde = ta.highest(kde,100)  // Maximum KDE value over a period
+probDensity = kde / maxKde
+plot(currentDensity, color=color.red, title="Current Weight")
+plot(probDensity, color=color.yellow, title="Probability Density")
 // Reversal Likelihood (1 - Probability Density)
 reversalLikelihood = 1 - probDensity
 kdePeak = kde > kde[1] and kde > kde[2] 
 kdeTrough = kde < kde[1] and kde < kde[2]
-recentPeak = ta.highest(kdePeak ? kde : na, 500)  // Find recent peak
-recentTrough = ta.lowest(kdeTrough ? kde : na, 500)
+recentPeak = ta.highest(kdePeak ? kde : na, 100)  // Find recent peak
+recentTrough = ta.lowest(kdeTrough ? kde : na, 100)
 plot(kde)
 atrThreshold = input.float(50, title="ATR Threshold")  // Adjust threshold based on asset
 // Collect SuperTrend values for KDE
-buySignal = directionChange and dir == -1 and reversalLikelihood > 0.6 and close < recentPeak
-sellSignal = directionChange and dir == 1 and reversalLikelihood > 0.6 and close > recentTrough 
+bool buySignal = directionChange and dir == -1 and reversalLikelihood < 0.1 and close < recentPeak
+bool sellSignal = directionChange and dir == 1 and reversalLikelihood < 0.1 and close > recentTrough 
 // Plot the SuperTrend lines based on the direction
 upTrend = plot(dir == -1 ? supertrend : na, color=color.green, style=plot.style_linebr, title="UpTrend Line")
 downTrend = plot(dir == 1 ? supertrend : na, color=color.red, style=plot.style_linebr, title="DownTrend Line")
@@ -78,5 +85,12 @@ fill(bodyMiddle, downTrend, supertrend, (open + close) / 2, color.red, color.new
 plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=color.green,text = "▲", textcolor = chart.fg_color, size=size.small, title="Buy Signal")
 plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=color.red, text = "▼", textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
 
+
 // use Tether for flat price range.
 // TODO: tweak so that it works for every asset class, tests if it is actually correct and add user inputs and fix the code a little bit
+
+
+
+// FIX Its only gives a signal when the trend is broken with extra filter. ?????
+
+// How can I fix this? 
