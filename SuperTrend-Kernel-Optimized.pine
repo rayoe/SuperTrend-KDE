@@ -87,10 +87,4 @@ plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=c
 
 
 // use Tether for flat price range.
-// TODO: tweak so that it works for every asset class, tests if it is actually correct and add user inputs and fix the code a little bit
-
-
-
-// FIX Its only gives a signal when the trend is broken with extra filter. ?????
-
-// How can I fix this? 
+// TODO: Fix signals logic and add user inputs and fix the code a little bit
