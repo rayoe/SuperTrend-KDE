@@ -88,3 +88,9 @@ plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=c
 
 // use Tether for flat price range.
 // TODO: Fix signals logic and add user inputs and fix the code a little bit
+
+// user inputs: kernel, bins, bandwidth factor, some activation threshold. colors, etc. 
+
+// Maybe use the distance to pivot as a signal.??????
+
+
