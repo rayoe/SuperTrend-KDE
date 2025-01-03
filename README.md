@@ -2,11 +2,14 @@
 Overview: 
 
 The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-following strategy with Kernel Density Estimation (KDE) to predict the probability of trend reversals. This indicator works on a variety of assets like BTC, EUR/USD, NQ, and more, providing actionable signals to traders.
+
 # How It Works
 
-## SuperTrend Calculation: The indicator uses SuperTrend to detect trends, calculating the trend direction (up or down) based on a multiplier and ATR (Average True Range).
+## SuperTrend Calculation: 
+- The indicator uses SuperTrend to detect trends, calculating the trend direction (up or down) based on a multiplier and ATR (Average True Range).
 
-## Kernel Density Estimation (KDE): The KDE algorithm estimates the distribution of closing prices using a selected kernel type. You can choose between:
+## Kernel Density Estimation (KDE): 
+- The KDE algorithm estimates the distribution of closing prices using a selected kernel type. You can choose between:
 - Gaussian (bell-shaped curve)
 - Uniform (flat distribution)
 - Sigmoid (S-shaped curve)
