@@ -5,25 +5,27 @@
 indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
 // Input Parameters
-float factorInput = input.float(1.5, title="SuperTrend Factor", group="SuperTrend Settings")
-int atrlengthInput = input.int(10, title="ATR Length", group="SuperTrend Settings")
+float factorInput = input.float(1.5, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
+int atrlengthInput = input.int(10, title="ATR Length", group="SuperTrend Settings", tooltip="The number of bars used to calculate the Average True Range (ATR) for the SuperTrend.")
 float bandwidthInput = input.float(2.71828, "Bandwidth", group = "KDE", tooltip = "This setting sets the smoothness of the KDE function output.")
 int stepsInput = input.int(100, "Nº Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.")
 float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "KDE", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], group = "KDE", tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.")
-int transparencyInput1 = input.int(70, "Transparency 1", maxval = 100, minval = 0, group = "Appearance")
-int transparencyInput2= input.int(95, "Transparency 2", maxval = 100, minval = 0, group = "Appearance")
+int transparencyInput1 = input.int(30, "Transparency 1", maxval = 100, minval = 0, group = "Appearance")
+int transparencyInput2= input.int(40, "Transparency 2", maxval = 100, minval = 0, group = "Appearance")
 color bullishcolorInput = input.color(color.green, "Bullish Color", group = "Appearance")
 color bearishcolorInput = input.color(color.red, "Bearish Color", group = "Appearance")
 // ATR Calculation
-float atr = ta.atr(atr_len)
+float atr = ta.atr(atrlengthInput)
 
-// @function        Used to produce an argument for the `size` parameter in built-in functions.
-// @param userSize  (simple string) User-selected size.
-// @returns         One of the `size.*` built-in constants.
-// Dependencies     SIZE_LARGE, SIZE_NORMAL, SIZE_SMALL
-SuperTrend(simple int factor, simple float atr) =>
-    candle = hl2
+// @function        Calculates SuperTrend and detects the trend direction.
+// @param factor    (float) The multiplier applied to ATR to determine the band width.
+// @param atr       (float) The Average True Range (ATR) value.
+// @returns         An array with two values: The SuperTrend value and the trend direction
+// Dependencies     ta.atr
+
+SuperTrend(float factor, float atr) =>
+    candle = close
     upperBand = candle + factor * atr
     lowerBand = candle - factor * atr
     prevLowerBand = nz(lowerBand[1])
@@ -31,27 +33,47 @@ SuperTrend(simple int factor, simple float atr) =>
 
     lowerBand := lowerBand > prevLowerBand or close[1] < prevLowerBand ? lowerBand : prevLowerBand
     upperBand := upperBand < prevUpperBand or close[1] > prevUpperBand ? upperBand : prevUpperBand
-    int dir = na
-    float supertrend = na
-    prevSuperTrend = supertrend[1]
+    int direction = na
+    float superTrend = na
+    prevSuperTrend = superTrend[1]
     if na(atr[1])
-        dir := 1
+        direction := 1
     else if prevSuperTrend == prevUpperBand
-        dir := close > upperBand ? -1 : 1
+        direction := close > upperBand ? -1 : 1
     else
-        dir := close < lowerBand ? 1 : -1
-    supertrend := dir == -1 ? lowerBand : upperBand  // Detect trend changes
-    [supertrend, dir]
+        direction := close < lowerBand ? 1 : -1
+    superTrend := direction == -1 ? lowerBand : upperBand 
+    directionChange = direction != direction[1] // Detect trend changes
+    [superTrend, direction ,directionChange]
+[superTrend, direction, directionChange] = SuperTrend(factorInput, atr)
+pivotUp = directionChange and direction == -1 
+pivotDown = directionChange and direction == 1 
+// @function           Kernel function for KDE calculation with selectable kernel types.
+// @param x            (float) The difference between the current value and the density range value.
+// @param KDEBandwidth (float) The bandwidth parameter that controls the smoothness of the kernel.
+// @param kernelType   (string) The type of kernel to use. Can be "Gaussian", "Uniform", or "Sigmoid".
+// @returns            (float) The calculated kernel weight for the given value based on the selected kernel type.
+// @dependencies       math.exp, math.sqrt, math.abs
 
-kernel(x, KDEBandwidth, kernelType) =>
+kernel(steps, KDEBandwidth, kernelType) =>
     if kernelType == "Gaussian"
-        math.exp(-0.5 * math.pow(x / KDEBandwidth, 2)) / (KDEBandwidth * math.sqrt(2 * math.pi))
+        math.exp(-0.5 * math.pow(steps / KDEBandwidth, 2)) / (KDEBandwidth * math.sqrt(2 * math.pi))
     else if kernelType == "Uniform"
-        math.abs(x) <= KDEBandwidth ? 1 / (2 * KDEBandwidth) : 0
+        math.abs(steps) <= KDEBandwidth ? 1 / (2 * KDEBandwidth) : 0
     else if kernelType == "Sigmoid"
-        1 / (1 + math.exp(-x))
+        1 / (1 + math.exp(-steps))
+
+
+// @function           Calculates the Kernel Density Estimation (KDE) for a given set of pivots and settings.
+// @param KDEStep      (int) The number of steps used for the KDE calculation. Determines the resolution of the estimation.
+// @param KDEBandwidth (float) The bandwidth parameter for the kernel function, controlling the smoothness of the KDE.
+// @returns            (array) Returns an array with two elements: 
+//                      1. `kde` (float) - The KDE approximation for the given data.
+//                      2. `currentDensity` (float) - The density value for the current price level.
+// @dependencies       kernel, close, pivotUp, pivotDown, math operations
 
 kdeFunction(KDEStep, KDEBandwidth) =>
+
     kdeSum = 0.0
     weightSum = 0.0
     densitySum = 0.0
@@ -59,7 +81,7 @@ kdeFunction(KDEStep, KDEBandwidth) =>
     for i = 0 to KDEStep - 1
         isPivot = (pivotUp[i] or pivotDown[i])
         if isPivot
-            weight = kernel(i - (KDEStep / 2), KDEBandwidth, kernelType) // Use the Gaussian function
+            weight = kernel(i - (KDEStep / 2), KDEBandwidth, kernelInput) // Use the Gaussian function
             kdeSum := kdeSum + close[i] * weight
             weightSum := weightSum + weight
             densitySum := densitySum + weight
@@ -67,6 +89,12 @@ kdeFunction(KDEStep, KDEBandwidth) =>
                 currentDensity := weight  // Capture the density for the current price
     kde = kdeSum / weightSum  // KDE approximation
     [kde, currentDensity]
+
+// @function        Normalizes a given KDE value into a probability within the range [0, 1].
+// @param kdeValue  (float) The current KDE value to be normalized.
+// @param steps     (int) The number of steps over which the mean and standard deviation are calculated.
+// @returns         (float) The normalized probability in the range [0, 1], calculated using the Z-Score and sigmoid function.
+// @dependencies    ta.sma, math.sqrt, math.pow, math.exp
 
 normalizeProbability(kdeValue, steps) =>
     meanKde = ta.sma(kdeValue, steps)  // Moving average of KDE values (mean)
@@ -78,39 +106,22 @@ normalizeProbability(kdeValue, steps) =>
     // Apply Sigmoid function to map the result to a [0,1] range for other kernels
     1 / (1 + math.exp(-zScore)) // Normalize to range [0, 1]
 
-[supertrend, dir] = SuperTrend(factor, atr)
-directionChange = dir != dir[1]
-pivotUp = directionChange and dir == -1 
-pivotDown = directionChange and dir == 1 
+[kde , currentDensity] = kdeFunction(stepsInput, bandwidthInput)
 
+probabilityDensity = kernelInput == "Sigmoid" ? normalizeProbability(kde, stepsInput) : normalizeProbability(kde, stepsInput)   // Apply sigmoid function to scale between 0 and 1
 
+// Signal
+bool buySignal = directionChange and direction == -1 and probabilityDensity > ActivationThresholdInput
+bool sellSignal = directionChange and direction == 1 and probabilityDensity > ActivationThresholdInput
 
-[kde, currentDensity] = kdeFunction(KDEStep, KDEBandwidth)
-
-
-probDensity = kernelType == "Sigmoid" ? normalizeProbability(kde, KDEStep) : normalizeProbability(kde, KDEStep)   // Apply sigmoid function to scale between 0 and 1
-
-
-
-bool buySignal = directionChange and dir == -1 and probDensity > ActivationThreshold
-bool sellSignal = directionChange and dir == 1 and probDensity > ActivationThreshold
-
-upTrend = plot(dir == -1 ? supertrend : na, color = color.new(BULLISH_COLOR, t1), style=plot.style_linebr, title="UpTrend Line")
-downTrend = plot(dir == 1 ? supertrend : na, color = color.new(BEARISH_COLOR, t1), style=plot.style_linebr, title="DownTrend Line")
-
+// Style
+upTrend = plot(direction == -1 ? superTrend : na, color = color.new(bullishcolorInput, transparencyInput1), style=plot.style_linebr, title="UpTrend Line")
+downTrend = plot(direction == 1 ? superTrend : na, color = color.new(bearishcolorInput, transparencyInput1), style=plot.style_linebr, title="DownTrend Line")
 
 bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body Middle")
 
-fill(bodyMiddle, upTrend, (open + close) / 2, supertrend, color.new(BULLISH_COLOR, t2), color.new(BULLISH_COLOR, t1))
-fill(bodyMiddle, downTrend, supertrend, (open + close) / 2, color.new(BEARISH_COLOR, t1), color.new(BEARISH_COLOR, t2))
+fill(bodyMiddle, upTrend, (open + close) / 2, superTrend, color.new(bullishcolorInput, transparencyInput2), color.new(bullishcolorInput, transparencyInput1))
+fill(bodyMiddle, downTrend, superTrend, (open + close) / 2, color.new(bearishcolorInput, transparencyInput1), color.new(bearishcolorInput, transparencyInput2))
 
-plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=BULLISH_COLOR,text = "▲", textcolor = chart.fg_color, size=size.small, title="Buy Signal")
-plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=BEARISH_COLOR, text = "▼", textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
-
-
-
-
-
-
-
-// TODO: add user inputs and fix the code a little bit
+plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=bullishcolorInput,text="Buy" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="Sell" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
