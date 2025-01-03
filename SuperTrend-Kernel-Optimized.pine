@@ -17,9 +17,9 @@ float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval
 
 string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], group = "KDE", tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.")
 
-int transparencyInput1 = input.int(30, "Transparency 1", maxval = 100, minval = 0, group = "Appearance")
+int transparencyInput1 = input.int(70, "Transparency 1", maxval = 100, minval = 0, group = "Appearance")
 
-int transparencyInput2= input.int(40, "Transparency 2", maxval = 100, minval = 0, group = "Appearance")
+int transparencyInput2= input.int(80, "Transparency 2", maxval = 100, minval = 0, group = "Appearance")
 
 color bullishcolorInput = input.color(color.green, "Bullish Color", group = "Appearance")
 
