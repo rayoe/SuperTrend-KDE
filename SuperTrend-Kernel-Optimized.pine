@@ -63,7 +63,7 @@ pivotDown = directionChange and direction == 1
 
 
 // @function           Kernel function for KDE calculation with selectable kernel types.
-// @param steps            (float) The difference between the current value and the density range value.
+// @param steps        (float) The difference between the current value and the density range value.
 // @param KDEBandwidth (float) The bandwidth parameter that controls the smoothness of the kernel.
 // @param kernelType   (string) The type of kernel to use. Can be "Gaussian", "Uniform", or "Sigmoid".
 // @returns            (float) The calculated kernel weight for the given value based on the selected kernel type.
