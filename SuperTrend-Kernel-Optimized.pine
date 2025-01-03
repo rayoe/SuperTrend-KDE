@@ -7,7 +7,7 @@ atr_len = input.int(10, title="ATR Length", group="SuperTrend Settings")
 
 // ATR Calculation
 atr = ta.atr(atr_len)
-bandwidth = 5
+bandwidth = 4
 // SuperTrend Function
 SuperTrend(factor, atr) =>
     src = hl2
@@ -62,15 +62,17 @@ for i = 0 to 1000 - 1
 
 kde = kdeSum / weightSum  // KDE approximation
 // Normalized Probability Density
+minKde = ta.lowest(kde, 1000)
+maxKde = ta.highest(kde, 1000)
+normalizedKde = (kde - minKde) / (maxKde - minKde)  // Normalize to range [0, 1]
+
+// Apply sigmoid with more reasonable scaling factor
 sigmoid(x) =>
-    1 / (1 + math.exp(-x))
-windowSize = 1000
-meanKde = ta.sma(kdeSum / densitySum, windowSize)  // Get the mean KDE over the window
-deviationKde = math.sqrt(ta.sma(math.pow(kdeSum / densitySum - meanKde, 2), windowSize))  // Standard deviation of KDE
+    1 / (1 + math.exp(-x * 10))  // Apply sigmoid with a stronger scaling factor to emphasize variance
 
-scaledKde = (kdeSum / densitySum - meanKde) / deviationKde  // Standardized KDE value (z-score)
-
-probDensity = sigmoid(scaledKde)   // Apply sigmoid function to scale between 0 and 1
+// Calculate probability density
+probDensity = sigmoid(normalizedKde)
+   // Apply sigmoid function to scale between 0 and 1
 
 
 plot(currentDensity, color=color.red, title="Current Weight")
@@ -83,8 +85,8 @@ recentTrough = ta.lowest(kdeTrough ? kde : na, 1000)
 plot(kde)
 atrThreshold = input.float(50, title="ATR Threshold")  // Adjust threshold based on asset
 // Collect SuperTrend values for KDE
-bool buySignal =    directionChange and dir == -1 and probDensity > 0.3  // you can remove the reverse logic 
-bool sellSignal =    directionChange and dir == 1 and probDensity > 0.3 
+bool buySignal = directionChange and dir == -1 and probDensity > 0.6 
+bool sellSignal = directionChange and dir == 1 and probDensity > 0.6 
 // Plot the SuperTrend lines based on the direction
 upTrend = plot(    dir == -1 ? supertrend : na, color=color.green, style=plot.style_linebr, title="UpTrend Line")
 downTrend = plot( dir == 1 ? supertrend : na, color=color.red, style=plot.style_linebr, title="DownTrend Line")
@@ -100,11 +102,8 @@ plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=c
 
 
 
+
 // use Tether for flat price range.
 // TODO: Fix signals logic and add user inputs and fix the code a little bit
 
 // user inputs: kernel, bins, bandwidth factor, some activation threshold. colors, etc. 
-
-// Maybe use the distance to pivot as a signal.??????
-
-
