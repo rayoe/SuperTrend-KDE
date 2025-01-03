@@ -5,9 +5,9 @@
 indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
 // Input Parameters
-float factorInput = input.float(1.5, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
+float factorInput = input.float(1, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
 int atrlengthInput = input.int(10, title="ATR Length", group="SuperTrend Settings", tooltip="The number of bars used to calculate the Average True Range (ATR) for the SuperTrend.")
-float bandwidthInput = input.float(2.71828, "Bandwidth", group = "KDE", tooltip = "This setting sets the smoothness of the KDE function output.")
+float bandwidthInput = input.float(2, "Bandwidth", group = "KDE", tooltip = "This setting sets the smoothness of the KDE function output.")
 int stepsInput = input.int(100, "Nº Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.")
 float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "KDE", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], group = "KDE", tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.")
@@ -45,11 +45,16 @@ SuperTrend(float factor, float atr) =>
     superTrend := direction == -1 ? lowerBand : upperBand 
     directionChange = direction != direction[1] // Detect trend changes
     [superTrend, direction ,directionChange]
+
+
 [superTrend, direction, directionChange] = SuperTrend(factorInput, atr)
+
 pivotUp = directionChange and direction == -1 
 pivotDown = directionChange and direction == 1 
+
+
 // @function           Kernel function for KDE calculation with selectable kernel types.
-// @param x            (float) The difference between the current value and the density range value.
+// @param steps            (float) The difference between the current value and the density range value.
 // @param KDEBandwidth (float) The bandwidth parameter that controls the smoothness of the kernel.
 // @param kernelType   (string) The type of kernel to use. Can be "Gaussian", "Uniform", or "Sigmoid".
 // @returns            (float) The calculated kernel weight for the given value based on the selected kernel type.
@@ -58,8 +63,10 @@ pivotDown = directionChange and direction == 1
 kernel(steps, KDEBandwidth, kernelType) =>
     if kernelType == "Gaussian"
         math.exp(-0.5 * math.pow(steps / KDEBandwidth, 2)) / (KDEBandwidth * math.sqrt(2 * math.pi))
+        
     else if kernelType == "Uniform"
         math.abs(steps) <= KDEBandwidth ? 1 / (2 * KDEBandwidth) : 0
+
     else if kernelType == "Sigmoid"
         1 / (1 + math.exp(-steps))
 
@@ -75,9 +82,13 @@ kernel(steps, KDEBandwidth, kernelType) =>
 kdeFunction(KDEStep, KDEBandwidth) =>
 
     kdeSum = 0.0
+
     weightSum = 0.0
+
     densitySum = 0.0
+
     float currentDensity = na
+
     for i = 0 to KDEStep - 1
         isPivot = (pivotUp[i] or pivotDown[i])
         if isPivot
@@ -87,7 +98,9 @@ kdeFunction(KDEStep, KDEBandwidth) =>
             densitySum := densitySum + weight
             if i == 0
                 currentDensity := weight  // Capture the density for the current price
+
     kde = kdeSum / weightSum  // KDE approximation
+
     [kde, currentDensity]
 
 // @function        Normalizes a given KDE value into a probability within the range [0, 1].
