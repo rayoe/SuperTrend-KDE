@@ -9,7 +9,7 @@ The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-followin
 - The indicator uses SuperTrend to detect trends, calculating the trend direction (up or down) based on a multiplier and ATR (Average True Range).
 
 ## Kernel Density Estimation (KDE): 
-- The KDE algorithm estimates the distribution of closing prices using a selected kernel type. You can choose between:
+ ### The KDE algorithm estimates the distribution of closing prices using a selected kernel type. You can choose between:
 - Gaussian (bell-shaped curve)
 - Uniform (flat distribution)
 - Sigmoid (S-shaped curve)
