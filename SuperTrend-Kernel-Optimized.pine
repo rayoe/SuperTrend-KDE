@@ -8,7 +8,10 @@ float KDEBandwidth = input.float(2.71828, "Bandwidth", group = "KDE", tooltip = 
 int KDEStep = input.int(100, "Nº Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.")
 float ActivationThreshold = input.float(0.6, "Activation Threshold", maxval = 1, group = "KDE", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 string kernelType = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], group = "KDE", tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.")
-
+t1 = input.int(70, "Transparency 1", maxval = 100, minval = 0, group = "Appearance")
+t2 = input.int(95, "Transparency 2", maxval = 100, minval = 0, group = "Appearance")
+green = input.color(color.green, "Bullish Color", group = "Appearance")
+red = input.color(color.red, "Bearish Color", group = "Appearance")
 // ATR Calculation
 atr = ta.atr(atr_len)
 // SuperTrend Function
@@ -92,17 +95,17 @@ plot(kde)
 bool buySignal = directionChange and dir == -1 and probDensity > ActivationThreshold
 bool sellSignal = directionChange and dir == 1 and probDensity > ActivationThreshold
 
-upTrend = plot(    dir == -1 ? supertrend : na, color=color.green, style=plot.style_linebr, title="UpTrend Line")
-downTrend = plot( dir == 1 ? supertrend : na, color=color.red, style=plot.style_linebr, title="DownTrend Line")
+upTrend = plot(    dir == -1 ? supertrend : na, color = color.new(green, t1), style=plot.style_linebr, title="UpTrend Line")
+downTrend = plot( dir == 1 ? supertrend : na, color = color.new(red, t1), style=plot.style_linebr, title="DownTrend Line")
 
 
 bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body Middle")
 
-fill(bodyMiddle, upTrend, (open + close) / 2, supertrend, color.green, color.new(color.green, 90))
-fill(bodyMiddle, downTrend, supertrend, (open + close) / 2, color.red, color.new(color.red, 90))
+fill(bodyMiddle, upTrend, (open + close) / 2, supertrend, color.new(green, t2), color.new(green, t1))
+fill(bodyMiddle, downTrend, supertrend, (open + close) / 2, color.new(red, t1), color.new(red, t2))
 
-plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=color.green,text = "▲", textcolor = chart.fg_color, size=size.small, title="Buy Signal")
-plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=color.red, text = "▼", textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
+plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=green,text = "▲", textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=red, text = "▼", textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
 
 
 
@@ -111,5 +114,3 @@ plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=c
 
 
 // TODO: add user inputs and fix the code a little bit
-
-// user inputs:  some activation threshold. colors, etc. 
