@@ -1,5 +1,5 @@
 # SuperTrend KDE
-- Overview: 
+Overview: 
 
 The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-following strategy with Kernel Density Estimation (KDE) to predict the probability of trend reversals. This indicator works on a variety of assets like BTC, EUR/USD, NQ, and more, providing actionable signals to traders.
 How It Works
