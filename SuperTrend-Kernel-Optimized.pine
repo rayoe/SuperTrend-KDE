@@ -1,13 +1,16 @@
 //@version=5
-indicator("SuperTrend Kernel Optimized", overlay=true)
+indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
 // Input Parameters
-factor = input.float(1.5, title="Multiplier")
+factor = input.float(1.5, title="SuperTrend Factor", group="SuperTrend Settings")
 atr_len = input.int(10, title="ATR Length", group="SuperTrend Settings")
+float KDEBandwidth = input.float(2.71828, "Bandwidth", group = "KDE", tooltip = "This setting sets the smoothness of the KDE function output.")
+int KDEStep = input.int(100, "Nº Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.")
+float ActivationThreshold = input.float(0.6, "Activation Threshold", maxval = 1, group = "KDE", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
+string kernelType = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], group = "KDE", tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.")
 
 // ATR Calculation
 atr = ta.atr(atr_len)
-bandwidth = 4
 // SuperTrend Function
 SuperTrend(factor, atr) =>
     src = hl2
@@ -30,68 +33,69 @@ SuperTrend(factor, atr) =>
     supertrend := dir == -1 ? lowerBand : upperBand  // Detect trend changes
     [supertrend, dir]
 
-
-// Call SuperTrend
-
-
 // Call SuperTrend
 [supertrend, dir] = SuperTrend(factor, atr)
 directionChange = dir != dir[1]
 pivotUp = directionChange and dir == -1 
 pivotDown = directionChange and dir == 1 
-gaussian(n, bandwidth, decay) => 
-    norm = 1 / (bandwidth * math.sqrt(2 * math.pi))
-    weight = norm * math.exp(-0.5 * math.pow(n / bandwidth, 2)) * math.exp(-math.abs(n) * decay)
-    weight
 
+kernel(x, KDEBandwidth, kernelType) =>
+    if kernelType == "Gaussian"
+        math.exp(-0.5 * math.pow(x / KDEBandwidth, 2)) / (KDEBandwidth * math.sqrt(2 * math.pi))
+    else if kernelType == "Uniform"
+        math.abs(x) <= KDEBandwidth ? 1 / (2 * KDEBandwidth) : 0
+    else if kernelType == "Sigmoid"
+        1 / (1 + math.exp(-x))
+kdeFunction(KDEStep, KDEBandwidth) =>
+    kdeSum = 0.0
+    weightSum = 0.0
+    densitySum = 0.0
+    float currentDensity = na
+    for i = 0 to KDEStep - 1
+        isPivot = (pivotUp[i] or pivotDown[i])
+        if isPivot
+            weight = kernel(i - (KDEStep / 2), KDEBandwidth, kernelType) // Use the Gaussian function
+            kdeSum := kdeSum + close[i] * weight
+            weightSum := weightSum + weight
+            densitySum := densitySum + weight
+            if i == 0
+                currentDensity := weight  // Capture the density for the current price
+    kde = kdeSum / weightSum  // KDE approximation
+    [kde, currentDensity]
 
-kdeSum = 0.0
-weightSum = 0.0
-densitySum = 0.0
-float currentDensity = na
+// Call KDE Function
+[kde, currentDensity] = kdeFunction(KDEStep, KDEBandwidth)
+// KDE approximation
+normalizeProbability(kdeValue, steps) =>
+    meanKde = ta.sma(kdeValue, steps)  // Moving average of KDE values (mean)
+    stddevKde = math.sqrt(ta.sma(math.pow(kdeValue - meanKde, 2), steps))  // Standard deviation of KDE
 
-for i = 0 to 1000 - 1
-    isPivot = (pivotUp[i] or pivotDown[i])
-    if isPivot
-        weight = gaussian(i - (1000 / 2), bandwidth, 0.1)
-        kdeSum := kdeSum + close[i] * weight
-        weightSum := weightSum + weight
-        densitySum := densitySum + weight
-        if i == 0
-            currentDensity := weight  // Capture the density for the current price
+    // Normalize KDE using Z-Score
+    zScore = (kdeValue - meanKde) / stddevKde
 
-kde = kdeSum / weightSum  // KDE approximation
-// Normalized Probability Density
-minKde = ta.lowest(kde, 1000)
-maxKde = ta.highest(kde, 1000)
-normalizedKde = (kde - minKde) / (maxKde - minKde)  // Normalize to range [0, 1]
+    // Apply Sigmoid function to map the result to a [0,1] range for other kernels
+    1 / (1 + math.exp(-zScore)) // Normalize to range [0, 1]
 
 // Apply sigmoid with more reasonable scaling factor
 sigmoid(x) =>
     1 / (1 + math.exp(-x * 10))  // Apply sigmoid with a stronger scaling factor to emphasize variance
 
 // Calculate probability density
-probDensity = sigmoid(normalizedKde)
-   // Apply sigmoid function to scale between 0 and 1
+probDensity = kernelType == "Sigmoid" ? normalizeProbability(kde, KDEStep) : normalizeProbability(kde, KDEStep)   // Apply sigmoid function to scale between 0 and 1
 
 
 plot(currentDensity, color=color.red, title="Current Weight")
 plot(probDensity, color=color.yellow, title="Probability Density")
-// Reversal Likelihood (1 - Probability Density)
-kdePeak = kde > kde[1] and kde > kde[2] 
-kdeTrough = kde < kde[1] and kde < kde[2]
-recentPeak = ta.highest(kdePeak ? kde : na, 1000)  // Find recent peak
-recentTrough = ta.lowest(kdeTrough ? kde : na, 1000)
+
 plot(kde)
-atrThreshold = input.float(50, title="ATR Threshold")  // Adjust threshold based on asset
-// Collect SuperTrend values for KDE
-bool buySignal = directionChange and dir == -1 and probDensity > 0.6 
-bool sellSignal = directionChange and dir == 1 and probDensity > 0.6 
-// Plot the SuperTrend lines based on the direction
+
+bool buySignal = directionChange and dir == -1 and probDensity > ActivationThreshold
+bool sellSignal = directionChange and dir == 1 and probDensity > ActivationThreshold
+
 upTrend = plot(    dir == -1 ? supertrend : na, color=color.green, style=plot.style_linebr, title="UpTrend Line")
 downTrend = plot( dir == 1 ? supertrend : na, color=color.red, style=plot.style_linebr, title="DownTrend Line")
 
-// Fill Areas Between Candle Body and SuperTrend Line
+
 bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body Middle")
 
 fill(bodyMiddle, upTrend, (open + close) / 2, supertrend, color.green, color.new(color.green, 90))
@@ -103,7 +107,9 @@ plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=c
 
 
 
-// use Tether for flat price range.
-// TODO: Fix signals logic and add user inputs and fix the code a little bit
 
-// user inputs: kernel, bins, bandwidth factor, some activation threshold. colors, etc. 
+
+
+// TODO: add user inputs and fix the code a little bit
+
+// user inputs:  some activation threshold. colors, etc. 
