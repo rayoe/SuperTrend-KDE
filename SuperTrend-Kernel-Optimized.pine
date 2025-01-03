@@ -6,16 +6,25 @@ indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
 // Input Parameters
 float factorInput = input.float(1, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
+
 int atrlengthInput = input.int(10, title="ATR Length", group="SuperTrend Settings", tooltip="The number of bars used to calculate the Average True Range (ATR) for the SuperTrend.")
+
 float bandwidthInput = input.float(2, "Bandwidth", group = "KDE", tooltip = "This setting sets the smoothness of the KDE function output.")
+
 int stepsInput = input.int(100, "Nº Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.")
+
 float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "KDE", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
+
 string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], group = "KDE", tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.")
+
 int transparencyInput1 = input.int(30, "Transparency 1", maxval = 100, minval = 0, group = "Appearance")
+
 int transparencyInput2= input.int(40, "Transparency 2", maxval = 100, minval = 0, group = "Appearance")
+
 color bullishcolorInput = input.color(color.green, "Bullish Color", group = "Appearance")
+
 color bearishcolorInput = input.color(color.red, "Bearish Color", group = "Appearance")
-// ATR Calculation
+
 float atr = ta.atr(atrlengthInput)
 
 // @function        Calculates SuperTrend and detects the trend direction.
