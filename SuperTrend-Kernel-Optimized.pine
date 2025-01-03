@@ -11,7 +11,7 @@ int atrlengthInput = input.int(10, title="ATR Length", group="SuperTrend Setting
 
 float bandwidthInput = input.float(2, "Bandwidth", group = "KDE", tooltip = "This setting sets the smoothness of the KDE function output.")
 
-int stepsInput = input.int(100, "Nº Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.")
+int stepsInput = input.int(100, "Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.")
 
 float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "KDE", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 
