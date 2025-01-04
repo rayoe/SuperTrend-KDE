@@ -19,7 +19,7 @@ float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval
 
 float StrongSignalThresholdInput = input.float(0.9, "Strong Signal Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a strong buy or sell signal.")
 
-bool densityPercentage = input.bool(false, "Show cumulative density %", group = "Style")
+bool densityPercentage = input.bool(false, "Show Cumulative Density %", group = "Style")
 
 int transparencyInput1 = input.int(20, "Transparency 1", maxval = 100, minval = 0, group = "Style")
 
