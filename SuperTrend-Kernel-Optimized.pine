@@ -4,7 +4,6 @@
 //@version=5
 indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
-bool DEBUG = false
 // Input Parameters
 float factorInput = input.float(3, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
 
@@ -18,13 +17,17 @@ string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gau
 
 float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 
+float StrongSignalThresholdInput = input.float(0.9, "Strong signal Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a strong buy or sell signal.")
+
+bool densityPercentage = input.bool(false, "Show cumulative density %", group = "Style")
+
 int transparencyInput1 = input.int(20, "Transparency 1", maxval = 100, minval = 0, group = "Style")
 
 int transparencyInput2= input.int(98, "Transparency 2", maxval = 100, minval = 0, group = "Style")
 
-color bullishcolorInput = input.color(#388e3c, "Bullish Color", group = "Style")
+color bullishcolorInput = input.color(#089981, "Bullish Color", group = "Style")
 
-color bearishcolorInput = input.color(#b22833, "Bearish Color", group = "Style")
+color bearishcolorInput = input.color(#f23645, "Bearish Color", group = "Style")
 
 color textColorInput = input.color(color.white, "Text Color", group="Style")
 
@@ -136,8 +139,11 @@ normalizeProbability(kdeValue, steps) =>
 probabilityDensity = kernelInput == "Sigmoid" ? normalizeProbability(kde, stepsInput) : normalizeProbability(kde, stepsInput)   // Apply sigmoid function to scale between 0 and 1
 
 // Signal
-bool buySignal = directionChange and direction == -1 and probabilityDensity > ActivationThresholdInput
-bool sellSignal = directionChange and direction == 1 and probabilityDensity > ActivationThresholdInput
+bool buySignal = directionChange and direction == -1 and probabilityDensity > ActivationThresholdInput and  probabilityDensity < StrongSignalThresholdInput
+bool sellSignal = directionChange and direction == 1 and probabilityDensity > ActivationThresholdInput and  probabilityDensity < StrongSignalThresholdInput
+
+bool strongBuySignal = directionChange and direction == -1 and probabilityDensity > StrongSignalThresholdInput
+bool strongSellSignal = directionChange and direction == 1 and probabilityDensity > StrongSignalThresholdInput
 
 // Style
 upTrend = plot(direction == -1 ? superTrend : na, color = color.new(bullishcolorInput, transparencyInput1), style=plot.style_linebr, title="UpTrend Line")
@@ -148,13 +154,16 @@ bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body M
 fill(bodyMiddle, upTrend, (open + close) / 2, superTrend, color.new(bullishcolorInput, transparencyInput2), color.new(bullishcolorInput, transparencyInput1))
 fill(bodyMiddle, downTrend, superTrend, (open + close) / 2, color.new(bearishcolorInput, transparencyInput1), color.new(bearishcolorInput, transparencyInput2))
 
-plotshape(buySignal, style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+plotshape(buySignal,  style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
 plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
+
+plotshape(strongBuySignal,  style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲+" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+plotshape(strongSellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼+" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
 
 string probabilityText = str.tostring(probabilityDensity*100, "#.#") + "%"
 
-if DEBUG 
+if densityPercentage == true
     if buySignal
-        label.new(bar_index, low, probabilityText, color = na, style = label.style_label_up, textcolor = textColorInput, textalign = text.align_center, force_overlay = true)
+        label.new(bar_index, low, probabilityText, color=color.new(bullishcolorInput, 100), style=label.style_label_up, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.belowbar)
     else if sellSignal
-        label.new(bar_index, high, probabilityText, color = na, style = label.style_label_down, textcolor = textColorInput, textalign = text.align_center, force_overlay = true)
+        label.new(bar_index, high, probabilityText, color=color.new(bullishcolorInput, 100), style=label.style_label_down, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.abovebar)
