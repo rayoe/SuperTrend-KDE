@@ -5,25 +5,27 @@
 indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
 // Input Parameters
-float factorInput = input.float(1, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
+float factorInput = input.float(3, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
 
 int atrlengthInput = input.int(10, title="ATR Length", group="SuperTrend Settings", tooltip="The number of bars used to calculate the Average True Range (ATR) for the SuperTrend.")
 
-float bandwidthInput = input.float(2, "Bandwidth", group = "KDE", tooltip = "This setting sets the smoothness of the KDE function output.", group="KDE"
+float bandwidthInput = input.float(2, "Bandwidth", tooltip = "This setting sets the smoothness of the KDE function output.", group="KDE")
 
-int stepsInput = input.int(100, "Bins", minval = 1, group = "KDE", tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.", group="KDE")
+int stepsInput = input.int(100, "Bins", minval = 1, tooltip = "The number of elements the KDE Probability array will have. Higher settings will result in greater precision.", group="KDE")
 
-string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], group = "KDE", tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.", group="KDE")
+string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.", group="KDE")
 
 float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 
-int transparencyInput1 = input.int(70, "Transparency 1", maxval = 100, minval = 0, group = "Style")
+int transparencyInput1 = input.int(20, "Transparency 1", maxval = 100, minval = 0, group = "Style")
 
-int transparencyInput2= input.int(80, "Transparency 2", maxval = 100, minval = 0, group = "Style")
+int transparencyInput2= input.int(98, "Transparency 2", maxval = 100, minval = 0, group = "Style")
 
-color bullishcolorInput = input.color(color.green, "Bullish Color", group = "Style")
+color bullishcolorInput = input.color(#0097a7, "Bullish Color", group = "Style")
 
-color bearishcolorInput = input.color(color.red, "Bearish Color", group = "Style")
+color bearishcolorInput = input.color(#e91e63, "Bearish Color", group = "Style")
+
+color textColorInput = input.color(color.white, "Text Color", group="Style")
 
 float atr = ta.atr(atrlengthInput)
 
@@ -145,5 +147,5 @@ bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body M
 fill(bodyMiddle, upTrend, (open + close) / 2, superTrend, color.new(bullishcolorInput, transparencyInput2), color.new(bullishcolorInput, transparencyInput1))
 fill(bodyMiddle, downTrend, superTrend, (open + close) / 2, color.new(bearishcolorInput, transparencyInput1), color.new(bearishcolorInput, transparencyInput2))
 
-plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=bullishcolorInput,text="Buy" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
-plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="Sell" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
+plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=bullishcolorInput,text="✱" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="✱" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
