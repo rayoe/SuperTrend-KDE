@@ -147,12 +147,14 @@ bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body M
 
 fill(bodyMiddle, upTrend, (open + close) / 2, superTrend, color.new(bullishcolorInput, transparencyInput2), color.new(bullishcolorInput, transparencyInput1))
 fill(bodyMiddle, downTrend, superTrend, (open + close) / 2, color.new(bearishcolorInput, transparencyInput1), color.new(bearishcolorInput, transparencyInput2))
-string txt = str.tostring(probabilityDensity*100, "#.#") + "%"
+
 plotshape(buySignal, style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
 plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
 
+string probabilityText = str.tostring(probabilityDensity*100, "#.#") + "%"
+
 if DEBUG 
     if buySignal
-        label.new(bar_index, low, txt, color = na, style = label.style_label_up, textcolor = textColorInput, textalign = text.align_center, force_overlay = true)
+        label.new(bar_index, low, probabilityText, color = na, style = label.style_label_up, textcolor = textColorInput, textalign = text.align_center, force_overlay = true)
     else if sellSignal
-        label.new(bar_index, high, txt, color = na, style = label.style_label_down, textcolor = textColorInput, textalign = text.align_center, force_overlay = true)
+        label.new(bar_index, high, probabilityText, color = na, style = label.style_label_down, textcolor = textColorInput, textalign = text.align_center, force_overlay = true)
