@@ -1,63 +1,60 @@
-💎GENERAL OVERVIEW
-Introducing the new KDE-Enhanced SuperTrend Indicator! This advanced tool merges the trusted SuperTrend system with the Kernel Density Estimation (KDE) algorithm, delivering precise trend reversal signals. The indicator estimates reversal probabilities by analyzing historical price movements and provides customizable settings for strong signals, visual preferences, and more. For detailed insights, check the "HOW DOES IT WORK?" section.
-Features of the KDE-Enhanced SuperTrend Indicator:
+[b]Overview:[/b]
 
-    Advanced Trend Reversal Detection with KDE
-    Customizable Threshold for Strong Signals (default: 0.9)
-    Realtime KDE & Cumulative Density Dashboard
-    Alerts for High-Probability Reversals
-    Fully Customizable Visuals, Including Colors and Text
+The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-following strategy with Kernel Density Estimation (KDE) to predict the probability of trend reversals, providing actionable signals to traders.
 
-❓HOW TO INTERPRET THE KDE %
-The KDE % measures the probability of a trend reversal:
+[image]https://www.tradingview.com/x/lLufQTJc/[/image]
 
-    Low KDE (< 0.2): Low likelihood of a pivot; trends are likely to persist.
-    Moderate KDE (0.2 – 0.6): Growing potential for a reversal; monitor closely.
-    High KDE (> 0.6): Strong likelihood of a pivot; potential reversal or major move.
-    Strong Signal (KDE  > 0.9): Indicates a high-confidence pivot; suitable for strong buy/sell signals.
 
-📌HOW DOES IT WORK?
-The indicator integrates SuperTrend and KDE to identify potential trend changes:
+[b]Key Features[/b]
+[list]
+[*]Customizable KDE Algorithm: Choose the kernel type that best suits your strategy (Gaussian, Uniform, or Sigmoid).
+[*]SuperTrend-based Signals: Trade based on SuperTrend direction and probability of trend reversal.
+[*]Real-time Probability Display: Get live probability readings to assess the strength of the trend.
+[*]Buy and Sell Alerts: Set alerts for trend reversals with high probability.
+[*]Style: Fully Customizable Visuals, Including Colors and Text
+[/list]
 
-    SuperTrend Analysis:
-        Determines the current trend using ATR-based support and resistance.
-        Identifies trend direction changes.
+[b]How It Works[/b]
 
-    KDE Probability Estimation:
-        Computes a KDE curve based on historical price data.
-        Assigns higher weights to recent prices, ensuring the current price action reflects future probabilities.
-        Normalizes the KDE values for probability scaling (0 to 1).
-        Highlights peaks and troughs in the KDE curve, signaling likely reversals.
+SuperTrend Calculation:
+The indicator uses SuperTrend to detect trends, calculating the trend direction (up or down) based on a multiplier and ATR (Average True Range).
 
-    Cumulative Density Option:
-        Displays the cumulative probability, offering deeper insights into price movement likelihood.
-    
-    Threshold for  Signals:
-        Default set to 0.6, indicating buy or sell opportunities.
-        Alerts are triggered when KDE % exceeds this threshold.
+Kernel Density Estimation (KDE):
+The KDE algorithm estimates the distribution of closing prices using a selected kernel type. You can choose between:
+[list]
+[*]Gaussian (bell-shaped curve)
+[*]Uniform (flat distribution)
+[*]Sigmoid (S-shaped curve)
+[/list]
 
-    Threshold for Strong Signals:
-        Default set to 0.9, indicating high-confidence buy or sell opportunities.
-        Alerts are triggered when KDE % exceeds this threshold.
+Probability Calculation:
+After calculating KDE, the values are normalized to a range of 0 to 1, representing the probability that the trend will continue or reverse.
 
-🚩UNIQUENESS
-This indicator uniquely combines SuperTrend's dynamic trend-following system with KDE's statistical analysis, offering a predictive edge. 
-Its customizable KDE threshold and visual settings allow traders to fine-tune for strong signals, making it a powerful tool for identifying pivots.
+[image]https://www.tradingview.com/x/1woZCYkR/[/image]
 
-⚙️SETTINGS
+Buy/Sell Signals:
+[list]
+[*]Buy signals occur when the SuperTrend shifts upwards, and the probability value is higher than the Activation Threshold.
+[*]Sell signals occur when the SuperTrend shifts downwards and the probability value is higher than the Activation Threshold.
+[*]Strong Buy signals occur when the SuperTrend shifts upwards, and the probability value is higher than the Strong Signal Threshold.
+[*]Strong Sell signals occur when the SuperTrend shifts downwards and the probability value is higher than the Strong Signal Threshold.
+[/list]
 
-    SuperTrend Settings
-        Multiplier: Adjusts SuperTrend sensitivity to price changes.
-        ATR Length: Defines the number of bars used for ATR calculation.
+[b]Settings and Customization[/b]
 
-    KDE Settings
-        Bandwidth: Controls KDE curve smoothness.
-        Threshold for Strong Signals: Default: 0.9; tweak to adjust signal frequency.
-        Cumulative Density Display: Toggle on/off.
+SuperTrend Settings:     
+[list]
+[*]Multiplier: Adjusts SuperTrend sensitivity to price changes.
+[*]ATR Length: Defines the number of bars used for ATR calculation.
+[/list]
 
-    Visual Settings
-        Color and Text Customization: Choose colors and text styles for KDE % and reversal alerts.
+KDE Settings:
+Bandwidth: Controls KDE curve smoothness.
+Threshold for Buy/Sell Signals: Default: 0.6 - tweak to adjust signal frequency.
+Threshold for Strong Signals: Default: 0.9 - tweak to adjust signal frequency.
 
-    Alerts
-        Configure alerts for strong signals when KDE % exceeds the defined threshold.
-
+Visual Settings:
+[list]
+[*]Cumulative Density Display: Toggle on/off.
+[*]Color and Text Customization: Choose colors and text styles for KDE % and reversal alerts.
+[/list]
