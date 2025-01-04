@@ -18,7 +18,7 @@ string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gau
 
 float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 
-float StrongSignalThresholdInput = input.float(0.9, "Strong signal Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a strong buy or sell signal.")
+float StrongSignalThresholdInput = input.float(0.9, "Strong Signal Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a strong buy or sell signal.")
 
 bool densityPercentage = input.bool(false, "Show cumulative density %", group = "Style")
 
