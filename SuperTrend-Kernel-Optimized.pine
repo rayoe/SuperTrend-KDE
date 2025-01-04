@@ -4,6 +4,7 @@
 //@version=5
 indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
+bool DEBUG = true
 // Input Parameters
 float factorInput = input.float(3, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
 
@@ -163,7 +164,7 @@ plotshape(strongSellSignal, style=shape.labeldown, location=location.abovebar, c
 string probabilityText = str.tostring(probabilityDensity*100, "#.#") + "%"
 
 if densityPercentage == true
-    if buySignal
+    if buySignal or strongBuySignal
         label.new(bar_index, low, probabilityText, color=color.new(bullishcolorInput, 100), style=label.style_label_up, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.belowbar)
-    else if sellSignal
+    else if sellSignal or strongSellSignal
         label.new(bar_index, high, probabilityText, color=color.new(bullishcolorInput, 100), style=label.style_label_down, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.abovebar)
