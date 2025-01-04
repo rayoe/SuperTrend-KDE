@@ -4,7 +4,6 @@
 //@version=5
 indicator("SuperTrend Kernel Optimized | Flux Charts ", shorttitle = "SuperTrend KDE | Flux Charts", overlay=true)
 
-bool DEBUG = true
 // Input Parameters
 float factorInput = input.float(3, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
 
