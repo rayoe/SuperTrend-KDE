@@ -4,6 +4,7 @@
 //@version=5
 indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
 
+bool DEBUG = false
 // Input Parameters
 float factorInput = input.float(3, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
 
@@ -146,6 +147,12 @@ bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body M
 
 fill(bodyMiddle, upTrend, (open + close) / 2, superTrend, color.new(bullishcolorInput, transparencyInput2), color.new(bullishcolorInput, transparencyInput1))
 fill(bodyMiddle, downTrend, superTrend, (open + close) / 2, color.new(bearishcolorInput, transparencyInput1), color.new(bearishcolorInput, transparencyInput2))
-
-plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=bullishcolorInput,text="✱" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+string txt = str.tostring(probabilityDensity*100, "#.#") + "%"
+plotshape(buySignal, style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="✱" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
 plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="✱" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
+
+if DEBUG 
+    if buySignal
+        label.new(bar_index, low,  txt,yloc = yloc.belowbar,   color = na, textcolor = textColorInput, force_overlay = true)
+    else if sellSignal
+        label.new(bar_index, high, txt,yloc = yloc.abovebar,  color = na, textcolor = textColorInput, force_overlay = true)
