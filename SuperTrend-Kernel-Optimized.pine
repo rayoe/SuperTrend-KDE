@@ -157,8 +157,8 @@ fill(bodyMiddle, downTrend, superTrend, (open + close) / 2, color.new(bearishcol
 plotshape(buySignal,  style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
 plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
 
-plotshape(strongBuySignal,  style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲+" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
-plotshape(strongSellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼+" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
+plotshape(strongBuySignal,  style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲+" , textcolor = chart.fg_color, size=size.small, title="Strong Buy Signal")
+plotshape(strongSellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼+" , textcolor = chart.fg_color ,size=size.small, title="Strong Sell Signal")
 
 string probabilityText = str.tostring(probabilityDensity*100, "#.#") + "%"
 
