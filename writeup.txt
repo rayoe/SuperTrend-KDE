@@ -1,6 +1,6 @@
 [b]Overview:[/b]
 
-The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-following strategy with Kernel Density Estimation (KDE) to predict the probability of trend reversals, providing actionable signals to traders.
+The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-following strategy with Kernel Density Estimation (KDE) to predict the probability of trend reversals, providing actionable signals to traders. For more information about the process, please check the "How It Works" section.
 
 [image]https://www.tradingview.com/x/lLufQTJc/[/image]
 
@@ -20,7 +20,8 @@ SuperTrend Calculation:
 The indicator uses SuperTrend to detect trends, calculating the trend direction (up or down) based on a multiplier and ATR (Average True Range).
 
 Kernel Density Estimation (KDE):
-The KDE algorithm estimates the distribution of closing prices using a selected kernel type. You can choose between:
+The KDE algorithm estimates the distribution of closing prices using a selected kernel type. 
+You can choose between:
 [list]
 [*]Gaussian (bell-shaped curve)
 [*]Uniform (flat distribution)
@@ -34,9 +35,9 @@ After calculating KDE, the values are normalized to a range of 0 to 1, represent
 
 Buy/Sell Signals:
 [list]
-[*]Buy signals occur when the SuperTrend shifts upwards, and the probability value is higher than the Activation Threshold.
+[*]Buy signals occur when the SuperTrend shifts upwards and the probability value is higher than the Activation Threshold.
 [*]Sell signals occur when the SuperTrend shifts downwards and the probability value is higher than the Activation Threshold.
-[*]Strong Buy signals occur when the SuperTrend shifts upwards, and the probability value is higher than the Strong Signal Threshold.
+[*]Strong Buy signals occur when the SuperTrend shifts upwards and the probability value is higher than the Strong Signal Threshold.
 [*]Strong Sell signals occur when the SuperTrend shifts downwards and the probability value is higher than the Strong Signal Threshold.
 [/list]
 
@@ -56,5 +57,5 @@ Threshold for Strong Signals: Default: 0.9 - tweak to adjust signal frequency.
 Visual Settings:
 [list]
 [*]Cumulative Density Display: Toggle on/off.
-[*]Color and Text Customization: Choose colors and text styles for KDE % and reversal alerts.
+[*]Color and Text Customization: Choose colors, color transparency and text styles for KDE % and reversal alerts.
 [/list]
