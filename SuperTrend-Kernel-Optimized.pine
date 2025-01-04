@@ -2,7 +2,7 @@
 // © fluxchart
 
 //@version=5
-indicator("SuperTrend Kernel Optimized | Flux Charts ", overlay=true)
+indicator("SuperTrend Kernel Optimized | Flux Charts ", shorttitle = "SuperTrend KDE | Flux Charts", overlay=true)
 
 bool DEBUG = true
 // Input Parameters
