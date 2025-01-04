@@ -22,9 +22,9 @@ int transparencyInput1 = input.int(20, "Transparency 1", maxval = 100, minval = 
 
 int transparencyInput2= input.int(98, "Transparency 2", maxval = 100, minval = 0, group = "Style")
 
-color bullishcolorInput = input.color(#0097a7, "Bullish Color", group = "Style")
+color bullishcolorInput = input.color(#388e3c, "Bullish Color", group = "Style")
 
-color bearishcolorInput = input.color(#e91e63, "Bearish Color", group = "Style")
+color bearishcolorInput = input.color(#b22833, "Bearish Color", group = "Style")
 
 color textColorInput = input.color(color.white, "Text Color", group="Style")
 
@@ -148,8 +148,8 @@ bodyMiddle = plot((open + close) / 2, display=display.none, title="Candle Body M
 fill(bodyMiddle, upTrend, (open + close) / 2, superTrend, color.new(bullishcolorInput, transparencyInput2), color.new(bullishcolorInput, transparencyInput1))
 fill(bodyMiddle, downTrend, superTrend, (open + close) / 2, color.new(bearishcolorInput, transparencyInput1), color.new(bearishcolorInput, transparencyInput2))
 string txt = str.tostring(probabilityDensity*100, "#.#") + "%"
-plotshape(buySignal, style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="✱" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
-plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="✱" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
+plotshape(buySignal, style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲" , textcolor = chart.fg_color, size=size.small, title="Buy Signal")
+plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼" , textcolor = chart.fg_color ,size=size.small, title="Sell Signal")
 
 if DEBUG 
     if buySignal
