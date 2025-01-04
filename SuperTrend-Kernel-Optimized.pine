@@ -153,6 +153,6 @@ plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=b
 
 if DEBUG 
     if buySignal
-        label.new(bar_index, low,  txt,yloc = yloc.abovebar,   color = na, textcolor = textColorInput, force_overlay = true)
+        label.new(bar_index, low, txt, yloc = yloc.abovebar, color = na, style = label.style_label_up, textcolor = textColorInput, force_overlay = true)
     else if sellSignal
-        label.new(bar_index, high, txt,yloc = yloc.belowbar,  color = na, textcolor = textColorInput, force_overlay = true)
+        label.new(bar_index, high, txt, yloc = yloc.belowbar, color = na, style = label.style_label_down, textcolor = textColorInput, force_overlay = true)
