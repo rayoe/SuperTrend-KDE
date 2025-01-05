@@ -1,11 +1,11 @@
-[b]Overview:[/b]
+[b]OVERVIEW:[/b]
 
-The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-following strategy with Kernel Density Estimation (KDE) to predict the probability of trend reversals, providing actionable signals to traders. For more information about the process, please check the "How It Works" section.
+The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-following strategy with Kernel Density Estimation (KDE) to predict the probability of trend reversals, providing actionable signals to traders. For more information about the process, please check the "HOW IT WORKS" section.
 
 [image]https://www.tradingview.com/x/lLufQTJc/[/image]
 
 
-[b]Key Features[/b]
+[b]KEY FEATURES[/b]
 [list]
 [*]Customizable KDE Algorithm: Choose the kernel type that best suits your strategy (Gaussian, Uniform, or Sigmoid).
 [*]SuperTrend-based Signals: Trade based on SuperTrend direction and probability of trend reversal.
@@ -14,7 +14,7 @@ The SuperTrend Kernel Optimized indicator combines the SuperTrend trend-followin
 [*]Style: Fully Customizable Visuals, Including Colors and Text
 [/list]
 
-[b]How It Works[/b]
+[b]HOW IT WORKS[/b]
 
 SuperTrend Calculation:
 The indicator uses SuperTrend to detect trends, calculating the trend direction (up or down) based on a multiplier and ATR (Average True Range).
@@ -41,7 +41,7 @@ Buy/Sell Signals:
 [*]Strong Sell signals occur when the SuperTrend shifts downwards and the probability value is higher than the Strong Signal Threshold.
 [/list]
 
-[b]Settings and Customization[/b]
+[b]SETTINGS AND CUSTOMIZATION[/b]
 
 SuperTrend Settings:     
 [list]
