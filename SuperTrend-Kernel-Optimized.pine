@@ -15,9 +15,9 @@ int stepsInput = input.int(100, "Bins", minval = 1, tooltip = "The number of ele
 
 string kernelInput = input.string("Gaussian", "Kernel", options=['Uniform', 'Gaussian', 'Sigmoid'], tooltip = "The kernel function for KDE calculation. Gaussian is a commonly used kernel and is based on normal distribution.", group="KDE")
 
-float ActivationThresholdInput = input.float(0.6, "Activation Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
+float ActivationThresholdInput = input.float(60, "Activation Threshold %", maxval = 100, group = "Signal", tooltip = "The threshold for the KDE function to trigger a buy or sell signal.")
 
-float StrongSignalThresholdInput = input.float(0.9, "Strong Signal Threshold", maxval = 1, group = "Signal", tooltip = "The threshold for the KDE function to trigger a strong buy or sell signal.")
+float StrongSignalThresholdInput = input.float(90, "Strong Signal Threshold %", maxval = 100, group = "Signal", tooltip = "The threshold for the KDE function to trigger a strong buy or sell signal.")
 
 bool densityPercentage = input.bool(true, "Show Cumulative Density %", group = "Style")
 
@@ -139,11 +139,11 @@ normalizeProbability(kdeValue, steps) =>
 probabilityDensity = kernelInput == "Sigmoid" ? normalizeProbability(kde, stepsInput) : normalizeProbability(kde, stepsInput)   // Apply sigmoid function to scale between 0 and 1
 
 // Signal
-bool buySignal = directionChange and direction == -1 and probabilityDensity > ActivationThresholdInput and  probabilityDensity < StrongSignalThresholdInput
-bool sellSignal = directionChange and direction == 1 and probabilityDensity > ActivationThresholdInput and  probabilityDensity < StrongSignalThresholdInput
+bool buySignal = directionChange and direction == -1 and probabilityDensity > (ActivationThresholdInput/100) and  probabilityDensity < (StrongSignalThresholdInput/100)
+bool sellSignal = directionChange and direction == 1 and probabilityDensity > (ActivationThresholdInput/100) and  probabilityDensity < (StrongSignalThresholdInput/100)
 
-bool strongBuySignal = directionChange and direction == -1 and probabilityDensity > StrongSignalThresholdInput
-bool strongSellSignal = directionChange and direction == 1 and probabilityDensity > StrongSignalThresholdInput
+bool strongBuySignal = directionChange and direction == -1 and probabilityDensity > (StrongSignalThresholdInput/100)
+bool strongSellSignal = directionChange and direction == 1 and probabilityDensity > (StrongSignalThresholdInput/100)
 
 // Style
 upTrend = plot(direction == -1 ? superTrend : na, color = color.new(bullishcolorInput, transparencyInput1), style=plot.style_linebr, title="UpTrend Line")

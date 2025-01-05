@@ -51,8 +51,8 @@ SuperTrend Settings:
 
 KDE Settings:
 Bandwidth: Controls KDE curve smoothness.
-Threshold for Buy/Sell Signals: Default: 0.6 - tweak to adjust signal frequency.
-Threshold for Strong Signals: Default: 0.9 - tweak to adjust signal frequency.
+Threshold for Buy/Sell Signals: Default: 60% - tweak to adjust signal frequency.
+Threshold for Strong Signals: Default: 90% - tweak to adjust signal frequency.
 
 Visual Settings:
 [list]
