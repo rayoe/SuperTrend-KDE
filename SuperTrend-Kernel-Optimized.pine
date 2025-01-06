@@ -90,31 +90,31 @@ kernel(steps, KDEBandwidth, kernelType) =>
 
 
 kdeFunction(pivotArray, pivot, KDEStep, KDEBandwidth) =>
-    // Check if the pivot array is empty
+   
     if array.size(pivotArray) == 0
-        [na, na]  // Return 'na' if the array is empty
+        [na, na] 
 
     kdeSum = 0.0
     weightSum = 0.0
     densitySum = 0.0
     float currentDensity = na
 
-    // Ensure valid range for historical data
+    
     startIndex = math.max(0, KDEStep / 2)
-    endIndex = math.min(KDEStep - 1, bar_index)  // bar_index ensures we don't exceed historical bars
+    endIndex = math.min(KDEStep - 1, bar_index)  
 
     for i = startIndex to endIndex
-        if i >= 0 and i < array.size(pivotArray)  // Ensure valid access
-            isPivot = pivot[i]  // Access the pivot array safely
+        if i >= 0 and i < array.size(pivotArray)
+            isPivot = pivot[i]  
             if isPivot
                 weight = kernel(i - (KDEStep / 2), KDEBandwidth, kernelInput)
                 kdeSum := kdeSum + array.get(pivotArray, i) * weight
                 weightSum := weightSum + weight
                 densitySum := densitySum + weight
                 if i == startIndex
-                    currentDensity := weight  // Capture the density for the current price
+                    currentDensity := weight  
 
-    kde = kdeSum / weightSum  // KDE approximation
+    kde = kdeSum / weightSum  
 
     [kde, currentDensity]
 
