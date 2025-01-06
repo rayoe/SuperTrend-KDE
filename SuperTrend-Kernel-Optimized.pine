@@ -5,7 +5,7 @@
 indicator("SuperTrend Kernel Optimized | Flux Charts", shorttitle = "SuperTrend KDE | Flux Charts", overlay=true)
 
 // Input Parameters
-float factorInput = input.float(3, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
+float factorInput = input.float(2, title="SuperTrend Factor", group="SuperTrend Settings", tooltip = "Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
 
 int atrlengthInput = input.int(10, title="ATR Length", group="SuperTrend Settings", tooltip="The number of bars used to calculate the Average True Range (ATR) for the SuperTrend.")
 
@@ -31,7 +31,6 @@ color bearishcolorInput = input.color(#f23645, "Bearish Color", group = "Style")
 
 color textColorInput = input.color(color.white, "Text Color", group="Style")
 
-float atr = ta.atr(atrlengthInput)
 
 // @function        Calculates SuperTrend and detects the trend direction.
 // @param factor    (float) The multiplier applied to ATR to determine the band width.
@@ -61,13 +60,6 @@ SuperTrend(float factor, float atr) =>
     directionChange = direction != direction[1] // Detect trend changes
     [superTrend, direction ,directionChange]
 
-
-[superTrend, direction, directionChange] = SuperTrend(factorInput, atr)
-
-pivotUp = directionChange and direction == -1 
-pivotDown = directionChange and direction == 1 
-
-
 // @function           Kernel function for KDE calculation with selectable kernel types.
 // @param steps        (float) The difference between the current value and the density range value.
 // @param KDEBandwidth (float) The bandwidth parameter that controls the smoothness of the kernel.
@@ -87,6 +79,8 @@ kernel(steps, KDEBandwidth, kernelType) =>
 
 
 // @function           Calculates the Kernel Density Estimation (KDE) for a given set of pivots and settings.
+// @param pivotArray   (array) The array of pivot values to calculate the KDE for.
+// @param pivot        (bool) The pivot condition to determine the direction of the KDE calculation.
 // @param KDEStep      (int) The number of steps used for the KDE calculation. Determines the resolution of the estimation.
 // @param KDEBandwidth (float) The bandwidth parameter for the kernel function, controlling the smoothness of the KDE.
 // @returns            (array) Returns an array with two elements: 
@@ -94,25 +88,31 @@ kernel(steps, KDEBandwidth, kernelType) =>
 //                      2. `currentDensity` (float) - The density value for the current price level.
 // @dependencies       kernel, close, pivotUp, pivotDown, math operations
 
-kdeFunction(KDEStep, KDEBandwidth) =>
+
+kdeFunction(pivotArray, pivot, KDEStep, KDEBandwidth) =>
+    // Check if the pivot array is empty
+    if array.size(pivotArray) == 0
+        [na, na]  // Return 'na' if the array is empty
 
     kdeSum = 0.0
-
     weightSum = 0.0
-
     densitySum = 0.0
-
     float currentDensity = na
 
-    for i = 0 to KDEStep - 1
-        isPivot = (pivotUp[i] or pivotDown[i])
-        if isPivot
-            weight = kernel(i - (KDEStep / 2), KDEBandwidth, kernelInput) // Use the Gaussian function
-            kdeSum := kdeSum + close[i] * weight
-            weightSum := weightSum + weight
-            densitySum := densitySum + weight
-            if i == 0
-                currentDensity := weight  // Capture the density for the current price
+    // Ensure valid range for historical data
+    startIndex = math.max(0, KDEStep / 2)
+    endIndex = math.min(KDEStep - 1, bar_index)  // bar_index ensures we don't exceed historical bars
+
+    for i = startIndex to endIndex
+        if i >= 0 and i < array.size(pivotArray)  // Ensure valid access
+            isPivot = pivot[i]  // Access the pivot array safely
+            if isPivot
+                weight = kernel(i - (KDEStep / 2), KDEBandwidth, kernelInput)
+                kdeSum := kdeSum + array.get(pivotArray, i) * weight
+                weightSum := weightSum + weight
+                densitySum := densitySum + weight
+                if i == startIndex
+                    currentDensity := weight  // Capture the density for the current price
 
     kde = kdeSum / weightSum  // KDE approximation
 
@@ -134,16 +134,32 @@ normalizeProbability(kdeValue, steps) =>
     // Apply Sigmoid function to map the result to a [0,1] range for other kernels
     1 / (1 + math.exp(-zScore)) // Normalize to range [0, 1]
 
-[kde , currentDensity] = kdeFunction(stepsInput, bandwidthInput)
+float atr = ta.atr(atrlengthInput)
 
-probabilityDensity = kernelInput == "Sigmoid" ? normalizeProbability(kde, stepsInput) : normalizeProbability(kde, stepsInput)   // Apply sigmoid function to scale between 0 and 1
+[superTrend, direction, directionChange] = SuperTrend(factorInput, atr)
 
+pivotUp = directionChange and direction == -1 
+pivotDown = directionChange and direction == 1 
+
+var float[] upPivots = array.new_float()
+var float[] downPivots = array.new_float()
+
+if pivotUp
+    array.push(upPivots, close)
+if pivotDown
+    array.push(downPivots, close)
+
+[upKDE, currentDensityUp] = kdeFunction(upPivots, pivotUp, stepsInput, bandwidthInput)
+[downKDE, currentDensityDown] = kdeFunction(downPivots, pivotDown, stepsInput, bandwidthInput)
+
+upProbability = kernelInput == "Sigmoid" ? normalizeProbability(upKDE, stepsInput) : normalizeProbability(upKDE, stepsInput)   // Apply sigmoid function to scale between 0 and 1
+downProbability = kernelInput == "Sigmoid" ? normalizeProbability(downKDE, stepsInput) : normalizeProbability(downKDE, stepsInput)   // Apply sigmoid function to scale between 0 and 1
 // Signal
-bool buySignal = directionChange and direction == -1 and probabilityDensity > (ActivationThresholdInput/100) and  probabilityDensity < (StrongSignalThresholdInput/100)
-bool sellSignal = directionChange and direction == 1 and probabilityDensity > (ActivationThresholdInput/100) and  probabilityDensity < (StrongSignalThresholdInput/100)
+bool buySignal = directionChange and direction == -1 and upProbability > (ActivationThresholdInput/100) and  upProbability < (StrongSignalThresholdInput/100)
+bool sellSignal = directionChange and direction == 1 and downProbability > (ActivationThresholdInput/100) and  downProbability < (StrongSignalThresholdInput/100)
 
-bool strongBuySignal = directionChange and direction == -1 and probabilityDensity > (StrongSignalThresholdInput/100)
-bool strongSellSignal = directionChange and direction == 1 and probabilityDensity > (StrongSignalThresholdInput/100)
+bool strongBuySignal = directionChange and direction == -1 and upProbability > (StrongSignalThresholdInput/100)
+bool strongSellSignal = directionChange and direction == 1 and downProbability > (StrongSignalThresholdInput/100)
 
 // Style
 upTrend = plot(direction == -1 ? superTrend : na, color = color.new(bullishcolorInput, transparencyInput1), style=plot.style_linebr, title="UpTrend Line")
@@ -160,10 +176,11 @@ plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=b
 plotshape(strongBuySignal,  style=shape.labelup, location=location.belowbar,  color=bullishcolorInput,text="▲+" , textcolor = chart.fg_color, size=size.small, title="Strong Buy Signal")
 plotshape(strongSellSignal, style=shape.labeldown, location=location.abovebar, color=bearishcolorInput,text="▼+" , textcolor = chart.fg_color ,size=size.small, title="Strong Sell Signal")
 
-string probabilityText = str.tostring(probabilityDensity*100, "#.#") + "%"
+string probabilityTextBear = str.tostring(downProbability*100, "#.#") + "%"
+string probabilityTextBull = str.tostring(upProbability*100, "#.#") + "%"
 
 if densityPercentage == true
     if buySignal or strongBuySignal
-        label.new(bar_index, low, probabilityText, color=color.new(bullishcolorInput, 100), style=label.style_label_up, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.belowbar)
+        label.new(bar_index, low, probabilityTextBull, color=color.new(bullishcolorInput, 100), style=label.style_label_up, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.belowbar)
     else if sellSignal or strongSellSignal
-        label.new(bar_index, high, probabilityText, color=color.new(bullishcolorInput, 100), style=label.style_label_down, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.abovebar)
+        label.new(bar_index, high, probabilityTextBear, color=color.new(bullishcolorInput, 100), style=label.style_label_down, textcolor=textColorInput, textalign=text.align_center, size = size.large, force_overlay=true, yloc = yloc.abovebar)
