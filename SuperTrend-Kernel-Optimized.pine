@@ -1,9 +1,7 @@
 //@version=5
 indicator("SuperTrend KDE (PDF-based Signals)", shorttitle="ST_KDE_PDF_Signals", overlay=true)
 
-//------------------------------------------------------------------------------------
-// ► 1) USER INPUTS
-//------------------------------------------------------------------------------------
+
 
 // --- SuperTrend Settings
 factorInput = input.float(2.0, title="SuperTrend Factor", group="SuperTrend Settings", tooltip="Multiplier for the ATR to determine the distance between the price and the SuperTrend line.")
@@ -190,10 +188,6 @@ if pivotDown and not na(dnProbabilityRatio)
         sellSignal := true
 
 
-// Plot density percentage labels
-
-
-// Optional: Plot probability ratios for debugging
 
 plot(upProbabilityRatio, title="Up Probability Ratio", precision = 4, color=color.blue, linewidth=1)
 plot(dnProbabilityRatio, title="Down Probability Ratio",precision = 4,  color=color.orange, linewidth=1)
